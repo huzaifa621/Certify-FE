@@ -1,0 +1,8 @@
+/* src/index.css */
+@import "./styles/base.css";
+@import "./styles/login.css";
+@import "./styles/templates.css";
+@import "./styles/templateEditor.css";
+@import "./styles/templateDetail.css";
+@import "./styles/batch.css";
+@import "./styles/verify.css";
