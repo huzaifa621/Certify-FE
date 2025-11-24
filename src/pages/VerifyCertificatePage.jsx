@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import client from "../api/client";
+import { API_BASE_URL } from "../config";
 
 export default function VerifyCertificatePage() {
   const { certId } = useParams();
@@ -76,7 +77,7 @@ export default function VerifyCertificatePage() {
 
         <div className="verify-image-wrapper">
           <img
-            src={`http://localhost:5000${cert.filePath}`}
+            src={`${API_BASE_URL}${cert.filePath}`}
             alt="Verified Certificate"
             className="verify-image"
           />

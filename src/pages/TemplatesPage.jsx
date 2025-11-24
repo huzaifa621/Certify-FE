@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import client from '../api/client';
 import toast from 'react-hot-toast';
+import { API_BASE_URL } from "../config";
 
 export default function TemplatesPage() {
   const navigate = useNavigate();
@@ -191,7 +192,7 @@ export default function TemplatesPage() {
                   </td>
                   <td>
                     <img
-                      src={`http://localhost:5000${t.imagePath}`}
+                      src={`${API_BASE_URL}${t.imagePath}`}
                       alt={t.name}
                       className="template-thumb"
                     />

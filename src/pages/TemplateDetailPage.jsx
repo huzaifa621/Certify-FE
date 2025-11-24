@@ -3,6 +3,9 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import client from "../api/client";
 import toast from "react-hot-toast";
+import { API_BASE_URL } from "../config";
+
+
 
 const QR_PLACEHOLDER_DATA_URL =
   "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='white'/><rect x='5' y='5' width='25' height='25' fill='black'/><rect x='70' y='5' width='25' height='25' fill='black'/><rect x='5' y='70' width='25' height='25' fill='black'/><rect x='40' y='40' width='20' height='20' fill='black'/></svg>";
@@ -262,7 +265,7 @@ export default function TemplateDetailPage() {
           <div className="template-detail-preview-wrapper">
             <div className="template-detail-preview-inner">
               <img
-                src={`http://localhost:5000${template.imagePath}`}
+                src={`${API_BASE_URL}${template.imagePath}`}
                 alt={template.name}
                 className="template-detail-image"
               />

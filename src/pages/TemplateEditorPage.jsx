@@ -5,6 +5,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import client from "../api/client";
 import toast from "react-hot-toast";
 import { Rnd } from "react-rnd";
+import { API_BASE_URL } from "../config";
+
 
 export default function TemplateEditorPage() {
   const { id } = useParams();
@@ -409,7 +411,7 @@ export default function TemplateEditorPage() {
           <div className="template-editor-canvas-inner">
             <img
               ref={imgRef}
-              src={`http://localhost:5000${template.imagePath}`}
+              src={`${API_BASE_URL}${template.imagePath}`}
               alt={template.name}
               className="template-editor-image"
               onLoad={handleImageLoad}

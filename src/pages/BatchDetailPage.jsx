@@ -1,3 +1,5 @@
+import { API_BASE_URL } from "../config";
+
 // src/pages/BatchDetailPage.jsx
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -76,7 +78,7 @@ export default function BatchDetailPage() {
   function getCertUrl(cert) {
     const path = cert.filePath || cert.url || cert.path;
     if (!path) return '';
-    return `http://localhost:5000${path}`;
+    return `${API_BASE_URL}${path}`;
   }
 
   function getCertNameFromData(cert) {
@@ -99,7 +101,7 @@ export default function BatchDetailPage() {
       return;
     }
 
-    const absoluteUrl = `http://localhost:5000${path}`;
+    const absoluteUrl = `${API_BASE_URL}${path}`;
     try {
       const res = await fetch(absoluteUrl);
       if (!res.ok) {
@@ -148,9 +150,9 @@ export default function BatchDetailPage() {
 
   const templatePreviewUrl =
     (templateMeta?.imagePath &&
-      `http://localhost:5000${templateMeta.imagePath}`) ||
+      `${API_BASE_URL}${templateMeta.imagePath}`) ||
     (batch.template?.imagePath &&
-      `http://localhost:5000${batch.template.imagePath}`) ||
+      `${API_BASE_URL}${batch.template.imagePath}`) ||
     null;
 
   // 2️⃣ Dynamic columns for all fields (from CSV row)
