@@ -23,9 +23,18 @@ export default function TemplatesPage() {
       const res = await client.get('/templates', {
         params: { page: pageToLoad, limit },
       });
-      setTemplates(res.data.items);
-      setTotal(res.data.total);
-      setPage(res.data.page);
+
+      // Defensive in case backend shape changes
+      const items =
+        Array.isArray(res.data.items)
+          ? res.data.items
+          : Array.isArray(res.data.templates)
+          ? res.data.templates
+          : [];
+
+      setTemplates(items);
+      setTotal(typeof res.data.total === 'number' ? res.data.total : items.length);
+      setPage(typeof res.data.page === 'number' ? res.data.page : pageToLoad);
     } catch (err) {
       if (err.response?.status === 401) {
         navigate('/login', { replace: true });
@@ -90,13 +99,18 @@ export default function TemplatesPage() {
     setFile(f || null);
   }
 
+  function getTemplateId(t) {
+    return t.templateCode || t._id;
+  }
+
   function handleClickTemplate(template) {
-    // Navigate to templatedetail/:id
-    navigate(`/templatedetail/${template._id}`);
+    const id = getTemplateId(template);
+    navigate(`/templatedetail/${id}`);
   }
 
   function handleAddFields(template) {
-    navigate(`/template/${template._id}/edit`);
+    const id = getTemplateId(template);
+    navigate(`/template/${id}/edit`);
   }
 
   async function handleDelete(template) {
@@ -106,7 +120,8 @@ export default function TemplatesPage() {
     if (!confirm) return;
 
     try {
-      await client.delete(`/templates/${template._id}`);
+      const id = getTemplateId(template);
+      await client.delete(`/templates/${id}`);
       toast.success('Template deleted');
       fetchTemplates(page);
     } catch (err) {
@@ -120,7 +135,8 @@ export default function TemplatesPage() {
     if (!newName || newName.trim() === template.name) return;
 
     try {
-      await client.put(`/templates/${template._id}`, { name: newName.trim() });
+      const id = getTemplateId(template);
+      await client.put(`/templates/${id}`, { name: newName.trim() });
       toast.success('Template renamed');
       fetchTemplates(page);
     } catch (err) {
@@ -132,6 +148,8 @@ export default function TemplatesPage() {
     if (p < 1 || p > totalPages) return;
     fetchTemplates(p);
   }
+
+  const isEmpty = !Array.isArray(templates) || templates.length === 0;
 
   return (
     <div className="templates-page">
@@ -165,7 +183,7 @@ export default function TemplatesPage() {
       <section className="templates-table-section">
         {loading ? (
           <p>Loading templates...</p>
-        ) : templates.length === 0 ? (
+        ) : isEmpty ? (
           <p>No templates yet</p>
         ) : (
           <table className="templates-table">
@@ -178,44 +196,47 @@ export default function TemplatesPage() {
               </tr>
             </thead>
             <tbody>
-              {templates.map((t, index) => (
-                <tr key={t._id}>
-                  <td>{(page - 1) * limit + (index + 1)}</td>
-                  <td>
-                    <button
-                      className="link-button"
-                      type="button"
-                      onClick={() => handleClickTemplate(t)}
-                    >
-                      {t.name}
-                    </button>
-                  </td>
-                  <td>
-                    <img
-                      src={`${API_BASE_URL}${t.imagePath}`}
-                      alt={t.name}
-                      className="template-thumb"
-                    />
-                  </td>
-                  <td>
-                    <div className="actions">
-                      <button type="button" onClick={() => handleRename(t)}>
-                        Rename
-                      </button>
+              {templates.map((t, index) => {
+                const rowKey = getTemplateId(t);
+                return (
+                  <tr key={rowKey}>
+                    <td>{(page - 1) * limit + (index + 1)}</td>
+                    <td>
                       <button
+                        className="link-button"
                         type="button"
-                        className="danger"
-                        onClick={() => handleDelete(t)}
+                        onClick={() => handleClickTemplate(t)}
                       >
-                        Delete
+                        {t.name}
                       </button>
-                      <button type="button" onClick={() => handleAddFields(t)}>
-                        Add Fields
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td>
+                      <img
+                        src={`${API_BASE_URL}${t.imagePath}`}
+                        alt={t.name}
+                        className="template-thumb"
+                      />
+                    </td>
+                    <td>
+                      <div className="actions">
+                        <button type="button" onClick={() => handleRename(t)}>
+                          Rename
+                        </button>
+                        <button
+                          type="button"
+                          className="danger"
+                          onClick={() => handleDelete(t)}
+                        >
+                          Delete
+                        </button>
+                        <button type="button" onClick={() => handleAddFields(t)}>
+                          Add Fields
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}

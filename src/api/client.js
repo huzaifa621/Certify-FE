@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 const client = axios.create({
-  baseURL: `${import.meta.env.VITE_API_BASE_URL}/api` || "http://localhost:5000",
+  baseURL: `${import.meta.env.VITE_API_BASE_URL}/api` || "http://localhost:5000/api",
   withCredentials: true, // important for HTTP-only cookie
 });
 

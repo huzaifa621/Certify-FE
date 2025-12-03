@@ -1,13 +1,12 @@
-import { API_BASE_URL } from "../config";
-
 // src/pages/BatchDetailPage.jsx
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import client from '../api/client';
 import toast from 'react-hot-toast';
+import client from '../api/client';
+import { API_BASE_URL } from '../config';
 
 export default function BatchDetailPage() {
-  const { id } = useParams(); // batch id
+  const { id } = useParams(); // batchCode or _id
   const navigate = useNavigate();
 
   const [batch, setBatch] = useState(null);
@@ -21,6 +20,7 @@ export default function BatchDetailPage() {
     async function fetchBatch() {
       try {
         setLoading(true);
+        // backend accepts batchCode OR _id
         const res = await client.get(`/batches/${id}`);
         setBatch(res.data);
       } catch (err) {
@@ -37,18 +37,23 @@ export default function BatchDetailPage() {
     fetchBatch();
   }, [id, navigate]);
 
-  // ---------- Load template meta (name + image + fields) if needed ----------
+  // ---------- Load template meta (name + image + fields) ----------
   useEffect(() => {
     async function fetchTemplateMeta() {
       if (!batch) return;
-      const templateId = batch.template?._id || batch.templateId;
-      if (!templateId) return;
+
+      // Prefer templateCode if present, fall back to _id or any templateId field
+      const templateRef =
+        batch.template?.templateCode ||
+        batch.template?._id ||
+        batch.templateId;
+
+      if (!templateRef) return;
 
       try {
-        const res = await client.get(`/templates/${templateId}`);
+        const res = await client.get(`/templates/${templateRef}`);
         setTemplateMeta(res.data);
       } catch (err) {
-        // Not critical, just log toast
         console.error('Failed to load template meta for batch', err);
       }
     }
@@ -64,15 +69,31 @@ export default function BatchDetailPage() {
   }
 
   function handleBack() {
-    if (batch?.template?._id) {
-      navigate(`/templatedetail/${batch.template._id}`);
-    } else if (batch?.templateId) {
-      navigate(`/templatedetail/${batch.templateId}`);
-    } else if (templateMeta?._id) {
-      navigate(`/templatedetail/${templateMeta._id}`);
-    } else {
-      navigate(-1);
+    // Try to navigate back to template detail using stable templateCode
+    if (batch?.template) {
+      const templateId =
+        batch.template.templateCode || batch.template._id;
+      if (templateId) {
+        navigate(`/templatedetail/${templateId}`);
+        return;
+      }
     }
+
+    if (templateMeta) {
+      const templateId =
+        templateMeta.templateCode || templateMeta._id;
+      if (templateId) {
+        navigate(`/templatedetail/${templateId}`);
+        return;
+      }
+    }
+
+    if (batch?.templateId) {
+      navigate(`/templatedetail/${batch.templateId}`);
+      return;
+    }
+
+    navigate(-1);
   }
 
   function getCertUrl(cert) {
@@ -141,12 +162,22 @@ export default function BatchDetailPage() {
 
   const certificates = batch.certificates || [];
 
-  // 1️⃣ Template name fix
+  const batchIdDisplay = batch.batchCode || batch._id;
+
+  // Template name + ID
   const templateName =
     templateMeta?.name ||
     batch.templateName ||
     batch.template?.name ||
     'Template';
+
+  const templateIdDisplay =
+    templateMeta?.templateCode ||
+    templateMeta?._id ||
+    batch.template?.templateCode ||
+    batch.template?._id ||
+    batch.templateId ||
+    '';
 
   const templatePreviewUrl =
     (templateMeta?.imagePath &&
@@ -155,12 +186,12 @@ export default function BatchDetailPage() {
       `${API_BASE_URL}${batch.template.imagePath}`) ||
     null;
 
-  // 2️⃣ Dynamic columns for all fields (from CSV row)
+  // Dynamic columns for all fields (from CSV row)
   let dynamicFieldLabels = [];
   if (certificates.length && certificates[0].data) {
     const keys = Object.keys(certificates[0].data);
     dynamicFieldLabels = keys.filter(
-      key => key.toLowerCase() !== 'email' // keep email separate
+      key => key.toLowerCase() !== 'email'
     );
   }
 
@@ -180,12 +211,23 @@ export default function BatchDetailPage() {
             <div>
               <h2 className="batch-title">{batch.name}</h2>
               <p className="batch-subtitle">
-                Batch generated from{' '}
-                <strong>{templateName}</strong>
+                Batch generated from <strong>{templateName}</strong>
               </p>
               <p className="batch-meta">
-                Total certificates: {certificates.length} • Created:{' '}
-                {formatDate(batch.createdAt)}
+                <span>
+                  <strong>Batch ID:</strong> {batchIdDisplay}
+                </span>
+                <br />
+                {templateIdDisplay && (
+                  <span>
+                    <strong>Template ID:</strong> {templateIdDisplay}
+                  </span>
+                )}
+                <br />
+                <span>
+                  Total certificates: {certificates.length} • Created:{' '}
+                  {formatDate(batch.createdAt)}
+                </span>
               </p>
             </div>
             <button
@@ -228,7 +270,6 @@ export default function BatchDetailPage() {
                 <tr>
                   <th>#</th>
                   <th>Email</th>
-                  {/* dynamic field headers from CSV / template fields */}
                   {dynamicFieldLabels.map(label => (
                     <th key={label}>{label}</th>
                   ))}
@@ -247,7 +288,6 @@ export default function BatchDetailPage() {
                       <td>{index + 1}</td>
                       <td>{cert.email}</td>
 
-                      {/* dynamic field values */}
                       {dynamicFieldLabels.map(label => (
                         <td key={label}>
                           {data[label] ?? ''}

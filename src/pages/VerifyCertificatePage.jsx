@@ -42,8 +42,8 @@ export default function VerifyCertificatePage() {
         <div className="verify-card invalid">
           <h2>❌ Invalid Certificate</h2>
           <p>
-            This certificate could not be verified.  
-            It may be deleted, incorrect, or tampered.
+            This certificate could not be verified. It may be deleted,
+            incorrect, or tampered.
           </p>
         </div>
       </div>
@@ -54,24 +54,54 @@ export default function VerifyCertificatePage() {
   const batch = data.batch;
   const template = data.template;
 
+  const certificateId = cert.certificateId || cert.id; // prefer new ID
+  const batchId = batch?.batchCode || batch?.id;
+  const templateId = template?.templateCode || template?.id;
+
   return (
     <div className="verify-page">
       <div className="verify-card">
         <div className="verify-badge">✔ Certificate Verified</div>
 
-        <h1 className="verify-name">{cert.name || cert.data?.Name || "Unnamed"}</h1>
+        <h1 className="verify-name">
+          {cert.name || cert.data?.Name || "Unnamed"}
+        </h1>
         <p className="verify-email">{cert.email}</p>
 
         <div className="verify-meta">
-          <div className="verify-meta-item">
+          <div>
+            <strong>Recipient:</strong> {cert.name || cert.email}
+          </div>
+          <div>
+            <strong>Email:</strong> {cert.email}
+          </div>
+
+          {/* NEW: show stable IDs */}
+          <div>
+            <strong>Certificate ID:</strong> {certificateId}
+          </div>
+          {batchId && (
+            <div>
+              <strong>Batch ID:</strong> {batchId}
+            </div>
+          )}
+          {templateId && (
+            <div>
+              <strong>Template ID:</strong> {templateId}
+            </div>
+          )}
+
+          <div>
             <strong>Batch:</strong> {batch?.name}
           </div>
-          <div className="verify-meta-item">
+          <div>
             <strong>Template:</strong> {template?.name || "N/A"}
           </div>
-          <div className="verify-meta-item">
-            <strong>Issued:</strong>{" "}
-            {batch?.createdAt ? new Date(batch.createdAt).toLocaleDateString() : "-"}
+          <div>
+            <strong>Issued On:</strong>{" "}
+            {batch?.createdAt
+              ? new Date(batch.createdAt).toLocaleDateString()
+              : "-"}
           </div>
         </div>
 

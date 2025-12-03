@@ -5,13 +5,11 @@ import client from "../api/client";
 import toast from "react-hot-toast";
 import { API_BASE_URL } from "../config";
 
-
-
 const QR_PLACEHOLDER_DATA_URL =
   "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='white'/><rect x='5' y='5' width='25' height='25' fill='black'/><rect x='70' y='5' width='25' height='25' fill='black'/><rect x='5' y='70' width='25' height='25' fill='black'/><rect x='40' y='40' width='20' height='20' fill='black'/></svg>";
 
 export default function TemplateDetailPage() {
-  const { id } = useParams();
+  const { id } = useParams(); // templateCode or _id
   const navigate = useNavigate();
 
   const [template, setTemplate] = useState(null);
@@ -204,7 +202,8 @@ export default function TemplateDetailPage() {
     }
   }
 
-  function goToBatch(batchId) {
+  function goToBatch(batch) {
+    const batchId = batch.batchCode || batch._id;
     navigate(`/batch/${batchId}`);
   }
 
@@ -230,9 +229,10 @@ export default function TemplateDetailPage() {
     );
   }
 
-  const qr = template.qrConfig && template.qrConfig.enabled
-    ? template.qrConfig
-    : null;
+  const qr =
+    template.qrConfig && template.qrConfig.enabled ? template.qrConfig : null;
+
+  const templateIdDisplay = template.templateCode || template._id;
 
   return (
     <div className="template-detail-page">
@@ -251,6 +251,9 @@ export default function TemplateDetailPage() {
               <h2 className="template-detail-title">{template.name}</h2>
               <p className="template-detail-subtitle">
                 This is the base template used for generating certificates.
+              </p>
+              <p className="template-detail-subtitle">
+                <strong>Template ID:</strong> {templateIdDisplay}
               </p>
             </div>
             <button
@@ -300,7 +303,6 @@ export default function TemplateDetailPage() {
                           : align === "right"
                           ? "flex-end"
                           : "flex-start",
-                      // 👇 match editor behavior
                       whiteSpace: "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
@@ -389,27 +391,32 @@ export default function TemplateDetailPage() {
                 <tr>
                   <th>#</th>
                   <th>Batch</th>
+                  <th>Batch ID</th>
                   <th>Total Certificates</th>
                   <th>Created At</th>
                 </tr>
               </thead>
               <tbody>
-                {batches.map((b, index) => (
-                  <tr key={b._id}>
-                    <td>{index + 1}</td>
-                    <td>
-                      <button
-                        type="button"
-                        className="link-button"
-                        onClick={() => goToBatch(b._id)}
-                      >
-                        {b.name}
-                      </button>
-                    </td>
-                    <td>{b.totalCount}</td>
-                    <td>{formatDate(b.createdAt)}</td>
-                  </tr>
-                ))}
+                {batches.map((b, index) => {
+                  const batchId = b.batchCode || b._id;
+                  return (
+                    <tr key={batchId}>
+                      <td>{index + 1}</td>
+                      <td>
+                        <button
+                          type="button"
+                          className="link-button"
+                          onClick={() => goToBatch(b)}
+                        >
+                          {b.name}
+                        </button>
+                      </td>
+                      <td>{batchId}</td>
+                      <td>{b.totalCount}</td>
+                      <td>{formatDate(b.createdAt)}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}
