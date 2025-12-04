@@ -7,8 +7,8 @@ import toast from "react-hot-toast";
 import { Rnd } from "react-rnd";
 import { API_BASE_URL } from "../config";
 
-
 export default function TemplateEditorPage() {
+  // NOTE: URL is /template/:id/edit where :id is actually the templateCode
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -27,6 +27,20 @@ export default function TemplateEditorPage() {
     height: 0.15,
   });
 
+  // Certificate ID config (normalized 0–1 + typography)
+  const [certificateIdConfig, setCertificateIdConfig] = useState({
+    enabled: false,
+    x: 0.1,
+    y: 0.05,
+    width: 0.3,
+    height: 0.06,
+    fontSize: 14,
+    fontWeight: 500,
+    fontColor: "#ffffff",
+    textAlign: "left",
+    fontStyle: "normal",
+  });
+
   // Modals
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -42,12 +56,21 @@ export default function TemplateEditorPage() {
   const imgRef = useRef(null);
   const [imgSize, setImgSize] = useState({ width: 0, height: 0 });
 
+  /* -------------------- Utility -------------------- */
+
+  function clamp01(value) {
+    const v = Number(value);
+    if (isNaN(v)) return 0;
+    return Math.max(0, Math.min(1, v));
+  }
+
   /* -------------------- Load Template -------------------- */
 
   useEffect(() => {
     async function loadTemplate() {
       try {
         setLoading(true);
+        // Backend: GET /templates/:id where :id is templateCode
         const res = await client.get(`/templates/${id}`);
         const t = res.data;
 
@@ -90,6 +113,25 @@ export default function TemplateEditorPage() {
         } else {
           setQrConfig((prev) => ({ ...prev, enabled: false }));
         }
+
+        // Load Certificate ID config if present
+        if (t.certificateIdConfig && t.certificateIdConfig.enabled) {
+          const c = t.certificateIdConfig;
+          setCertificateIdConfig({
+            enabled: true,
+            x: clamp01(c.x ?? 0.1),
+            y: clamp01(c.y ?? 0.05),
+            width: clamp01(c.width ?? 0.3),
+            height: clamp01(c.height ?? 0.06),
+            fontSize: c.fontSize ?? 14,
+            fontWeight: c.fontWeight ?? 500,
+            fontColor: c.fontColor || "#ffffff",
+            textAlign: c.textAlign || "left",
+            fontStyle: c.fontStyle || "normal",
+          });
+        } else {
+          setCertificateIdConfig((prev) => ({ ...prev, enabled: false }));
+        }
       } catch (err) {
         if (err.response?.status === 401) {
           navigate("/login", { replace: true });
@@ -112,14 +154,6 @@ export default function TemplateEditorPage() {
       width: imgRef.current.clientWidth,
       height: imgRef.current.clientHeight,
     });
-  }
-
-  /* -------------------- Utility -------------------- */
-
-  function clamp01(value) {
-    const v = Number(value);
-    if (isNaN(v)) return 0;
-    return Math.max(0, Math.min(1, v));
   }
 
   function selectField(fieldId) {
@@ -325,6 +359,61 @@ export default function TemplateEditorPage() {
     );
   }
 
+  /* -------------------- Certificate ID: Add / Remove / Drag / Resize -------------------- */
+
+  function handleAddCertificateId() {
+    if (certificateIdConfig.enabled) {
+      toast.error("Certificate ID already added");
+      return;
+    }
+
+    setCertificateIdConfig({
+      enabled: true,
+      x: 0.1,
+      y: 0.05,
+      width: 0.3,
+      height: 0.06,
+      fontSize: 14,
+      fontWeight: 500,
+      fontColor: "#ffffff",
+      textAlign: "left",
+      fontStyle: "normal",
+    });
+  }
+
+  function handleRemoveCertificateId() {
+    setCertificateIdConfig((prev) => ({ ...prev, enabled: false }));
+  }
+
+  function updateCertificateIdPosition(xPx, yPx) {
+    if (!imgSize.width || !imgSize.height) return;
+    const x = xPx / imgSize.width;
+    const y = yPx / imgSize.height;
+    setCertificateIdConfig((prev) =>
+      !prev.enabled ? prev : { ...prev, x: clamp01(x), y: clamp01(y) }
+    );
+  }
+
+  function updateCertificateIdSize(widthPx, heightPx, xPx, yPx) {
+    if (!imgSize.width || !imgSize.height) return;
+    const w = widthPx / imgSize.width;
+    const h = heightPx / imgSize.height;
+    const x = xPx / imgSize.width;
+    const y = yPx / imgSize.height;
+
+    setCertificateIdConfig((prev) =>
+      !prev.enabled
+        ? prev
+        : {
+            ...prev,
+            x: clamp01(x),
+            y: clamp01(y),
+            width: clamp01(w),
+            height: clamp01(h),
+          }
+    );
+  }
+
   /* -------------------- Save Template -------------------- */
 
   async function handleSaveTemplate() {
@@ -357,9 +446,26 @@ export default function TemplateEditorPage() {
             }
           : { enabled: false };
 
+      const payloadCertId =
+        certificateIdConfig && certificateIdConfig.enabled
+          ? {
+              enabled: true,
+              x: certificateIdConfig.x,
+              y: certificateIdConfig.y,
+              width: certificateIdConfig.width,
+              height: certificateIdConfig.height,
+              fontSize: certificateIdConfig.fontSize,
+              fontWeight: certificateIdConfig.fontWeight,
+              fontColor: certificateIdConfig.fontColor,
+              textAlign: certificateIdConfig.textAlign,
+              fontStyle: certificateIdConfig.fontStyle,
+            }
+          : { enabled: false };
+
       await client.put(`/templates/${id}/fields`, {
         fields: payloadFields,
         qrConfig: payloadQr,
+        certificateIdConfig: payloadCertId,
       });
 
       toast.success("Template fields saved");
@@ -516,14 +622,14 @@ export default function TemplateEditorPage() {
                   y: qrConfig.y * imgSize.height,
                 }}
                 bounds="parent"
-                lockAspectRatio={1} // NEW: force perfect square
+                lockAspectRatio={1}
                 onDragStop={(e, d) => updateQrPosition(d.x, d.y)}
                 onResizeStop={(e, direction, ref, delta, pos) => {
                   const sizePx = Math.min(ref.offsetWidth, ref.offsetHeight);
                   updateQrSize(sizePx, sizePx, pos.x, pos.y);
                 }}
                 enableResizing={{
-                  bottomRight: true, // restrict to bottom-right only
+                  bottomRight: true,
                 }}
                 resizeHandleStyles={{
                   bottomRight: {
@@ -546,7 +652,6 @@ export default function TemplateEditorPage() {
                   justifyContent: "center",
                 }}
               >
-                {/* SAMPLE QR PREVIEW (static SVG) */}
                 <img
                   src="data:image/svg+xml;utf8,
         <svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'>
@@ -560,6 +665,88 @@ export default function TemplateEditorPage() {
                   alt="QR Preview"
                   style={{ width: "100%", height: "100%" }}
                 />
+              </Rnd>
+            )}
+
+            {/* Certificate ID placeholder */}
+            {imgSize.width > 0 && certificateIdConfig.enabled && (
+              <Rnd
+                size={{
+                  width: certificateIdConfig.width * imgSize.width,
+                  height: certificateIdConfig.height * imgSize.height,
+                }}
+                position={{
+                  x: certificateIdConfig.x * imgSize.width,
+                  y: certificateIdConfig.y * imgSize.height,
+                }}
+                bounds="parent"
+                onDragStop={(e, d) =>
+                  updateCertificateIdPosition(d.x, d.y)
+                }
+                onResizeStop={(e, direction, ref, delta, pos) =>
+                  updateCertificateIdSize(
+                    ref.offsetWidth,
+                    ref.offsetHeight,
+                    pos.x,
+                    pos.y
+                  )
+                }
+                enableResizing={{
+                  top: true,
+                  right: true,
+                  bottom: true,
+                  left: true,
+                  topRight: true,
+                  bottomRight: true,
+                  bottomLeft: true,
+                  topLeft: true,
+                }}
+                resizeHandleStyles={{
+                  bottomRight: {
+                    width: "14px",
+                    height: "14px",
+                    background: "#f97316",
+                    borderRadius: "999px",
+                    bottom: "-7px",
+                    right: "-7px",
+                  },
+                }}
+                style={{
+                  zIndex: 7,
+                  border: "2px solid rgba(249, 115, 22, 0.8)",
+                  background: "rgba(249, 115, 22, 0.06)",
+                  borderRadius: "8px",
+                  padding: "2px 4px",
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: `${certificateIdConfig.fontSize}px`,
+                    fontWeight: certificateIdConfig.fontWeight,
+                    fontStyle: certificateIdConfig.fontStyle,
+                    fontFamily: "Arial, system-ui, sans-serif",
+                    color: certificateIdConfig.fontColor,
+                    width: "100%",
+                    height: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    textAlign: certificateIdConfig.textAlign,
+                    justifyContent:
+                      certificateIdConfig.textAlign === "center"
+                        ? "center"
+                        : certificateIdConfig.textAlign === "right"
+                        ? "flex-end"
+                        : "flex-start",
+                  }}
+                >
+                  {/* Only raw certificate string as preview */}
+                  ABC12345XY
+                </div>
               </Rnd>
             )}
           </div>
@@ -577,7 +764,6 @@ export default function TemplateEditorPage() {
                 Add New Field
               </button>
 
-              {/* QR buttons */}
               {!qrConfig.enabled ? (
                 <button
                   className="btn-pill btn-light"
@@ -596,6 +782,24 @@ export default function TemplateEditorPage() {
                 </button>
               )}
 
+              {!certificateIdConfig.enabled ? (
+                <button
+                  className="btn-pill btn-light"
+                  type="button"
+                  onClick={handleAddCertificateId}
+                >
+                  Add Certificate ID
+                </button>
+              ) : (
+                <button
+                  className="btn-pill btn-danger"
+                  type="button"
+                  onClick={handleRemoveCertificateId}
+                >
+                  Remove Certificate ID
+                </button>
+              )}
+
               <button
                 className="btn-pill btn-dark"
                 onClick={handleSaveTemplate}
@@ -609,8 +813,8 @@ export default function TemplateEditorPage() {
             </div>
 
             <p className="template-editor-hint">
-              Before saving, ensure you have placed all fields and the QR (if
-              added) correctly.
+              Before saving, ensure you have placed all fields, the QR (if
+              added), and the Certificate ID (if added) correctly.
             </p>
           </div>
 
@@ -658,6 +862,99 @@ export default function TemplateEditorPage() {
               </div>
             )}
           </div>
+
+          {/* Certificate ID Settings */}
+          {certificateIdConfig.enabled && (
+            <div className="template-editor-card">
+              <h3 className="template-editor-subtitle">
+                Certificate ID Settings
+              </h3>
+              <p className="template-editor-hint">
+                Adjust how the Certificate ID text appears on the certificate.
+              </p>
+
+              <label className="modal-label">
+                Font Size (px)
+                <input
+                  type="number"
+                  className="modal-input"
+                  value={certificateIdConfig.fontSize}
+                  onChange={(e) =>
+                    setCertificateIdConfig((prev) => ({
+                      ...prev,
+                      fontSize: Number(e.target.value) || 12,
+                    }))
+                  }
+                />
+              </label>
+
+              <label className="modal-label">
+                Font Weight
+                <input
+                  className="modal-input"
+                  value={certificateIdConfig.fontWeight}
+                  onChange={(e) =>
+                    setCertificateIdConfig((prev) => ({
+                      ...prev,
+                      fontWeight: e.target.value,
+                    }))
+                  }
+                  placeholder="300, 400, 500, 600..."
+                />
+              </label>
+
+              <label className="modal-label">
+                Font Color
+                <input
+                  className="modal-input"
+                  value={certificateIdConfig.fontColor}
+                  onChange={(e) =>
+                    setCertificateIdConfig((prev) => ({
+                      ...prev,
+                      fontColor: e.target.value,
+                    }))
+                  }
+                  placeholder="#ffffff"
+                />
+              </label>
+
+              <label className="modal-label">
+                Font Style
+                <select
+                  className="modal-select"
+                  value={certificateIdConfig.fontStyle}
+                  onChange={(e) =>
+                    setCertificateIdConfig((prev) => ({
+                      ...prev,
+                      fontStyle: e.target.value,
+                    }))
+                  }
+                >
+                  <option value="normal">Normal</option>
+                  <option value="italic">Italic</option>
+                  <option value="oblique">Oblique</option>
+                </select>
+              </label>
+
+              <label className="modal-label">
+                Text Align
+                <select
+                  className="modal-select"
+                  value={certificateIdConfig.textAlign}
+                  onChange={(e) =>
+                    setCertificateIdConfig((prev) => ({
+                      ...prev,
+                      textAlign: e.target.value,
+                    }))
+                  }
+                >
+                  <option value="left">Left</option>
+                  <option value="center">Center</option>
+                  <option value="right">Right</option>
+                </select>
+              </label>
+            </div>
+          )}
         </div>
       </div>
 
