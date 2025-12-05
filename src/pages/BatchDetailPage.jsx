@@ -140,6 +140,43 @@ export default function BatchDetailPage() {
     }
   }
 
+  // Download all certificates as zip
+  async function handleDownloadAllCertificates() {
+    if (!batch || !batch.certificates || batch.certificates.length === 0) {
+      toast.error("No certificates to download");
+      return;
+    }
+
+    const batchId = batch.batchCode || batch._id || id;
+
+    try {
+      toast.loading("Preparing zip file...", { id: "download-all" });
+
+      const res = await client.get(`/batches/${batchId}/download-all`, {
+        responseType: "blob",
+      });
+
+      const blob = new Blob([res.data], { type: "application/zip" });
+      const href = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = href;
+      a.download = `${batch.name.replace(/\s+/g, "_")}_certificates.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(href);
+
+      toast.success("All certificates downloaded!", { id: "download-all" });
+    } catch (err) {
+      console.error("Download all error:", err);
+      toast.error(
+        err.response?.data?.message || "Failed to download certificates",
+        { id: "download-all" }
+      );
+    }
+  }
+
   if (loading) {
     return (
       <div className="batch-page">
@@ -245,11 +282,23 @@ export default function BatchDetailPage() {
         {/* RIGHT: Certificates table */}
         <section className="batch-right batch-card">
           <div className="batch-right-header">
-            <h3>Certificates</h3>
-            <p className="template-detail-hint">
-              Each row represents a generated certificate mapped from the CSV
-              row.
-            </p>
+            <div>
+              <h3>Certificates</h3>
+              <p className="template-detail-hint">
+                Each row represents a generated certificate mapped from the CSV
+                row.
+              </p>
+            </div>
+            {certificates.length > 0 && (
+              <button
+                type="button"
+                className="btn-pill btn-primary"
+                onClick={handleDownloadAllCertificates}
+                style={{ marginTop: '8px' }}
+              >
+                Download All ({certificates.length})
+              </button>
+            )}
           </div>
 
           {certificates.length === 0 ? (
