@@ -382,6 +382,7 @@ export default function TemplateEditorPage() {
       fontSize: 14,
       fontWeight: 500,
       fontColor: "#ffffff",
+      fontFamily: "Arial",
       textAlign: "left",
       fontStyle: "normal",
     });
@@ -463,6 +464,7 @@ export default function TemplateEditorPage() {
               fontSize: certificateIdConfig.fontSize,
               fontWeight: certificateIdConfig.fontWeight,
               fontColor: certificateIdConfig.fontColor,
+              fontFamily: certificateIdConfig.fontFamily,
               textAlign: certificateIdConfig.textAlign,
               fontStyle: certificateIdConfig.fontStyle,
             }
@@ -941,6 +943,28 @@ export default function TemplateEditorPage() {
               </label>
 
               <label className="modal-label">
+                Font Family
+                <select
+                  className="modal-select"
+                  value={certificateIdConfig.fontFamily || "Arial"}
+                  onChange={(e) =>
+                    setCertificateIdConfig((prev) => ({
+                      ...prev,
+                      fontFamily: e.target.value,
+                    }))
+                  }
+                >
+                  <option value="Arial">Arial</option>
+                  <option value="Caladea">Caladea</option>
+                  <option value="Georgia">Georgia</option>
+                  <option value="Times New Roman">Times New Roman</option>
+                  <option value="Times">Times Roman</option>
+                  <option value="Courier New">Courier New</option>
+                  <option value="Verdana">Verdana</option>
+                </select>
+              </label>
+
+              <label className="modal-label">
                 Text Align
                 <select
                   className="modal-select"
@@ -1073,14 +1097,21 @@ export default function TemplateEditorPage() {
 
               <label className="modal-label">
                 Font Family
-                <input
-                  className="modal-input"
+                <select
+                  className="modal-select"
                   value={editFieldDraft.fontFamily}
                   onChange={(e) =>
                     handleEditDraftChange("fontFamily", e.target.value)
                   }
-                  placeholder="Arial"
-                />
+                >
+                  <option value="Arial">Arial</option>
+                  <option value="Caladea">Caladea</option>
+                  <option value="Georgia">Georgia</option>
+                  <option value="Times New Roman">Times New Roman</option>
+                  <option value="Times">Times Roman</option>
+                  <option value="Courier New">Courier New</option>
+                  <option value="Verdana">Verdana</option>
+                </select>
               </label>
 
               <label className="modal-label">
