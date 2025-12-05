@@ -7,6 +7,12 @@ import toast from "react-hot-toast";
 import { Rnd } from "react-rnd";
 import { API_BASE_URL } from "../config";
 
+function resolveImageUrl(path) {
+  if (!path) return "";
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  return `${API_BASE_URL}${path}`;
+}
+
 export default function TemplateEditorPage() {
   // NOTE: URL is /template/:id/edit where :id is actually the templateCode
   const { id } = useParams();
@@ -517,7 +523,7 @@ export default function TemplateEditorPage() {
           <div className="template-editor-canvas-inner">
             <img
               ref={imgRef}
-              src={`${API_BASE_URL}${template.imagePath}`}
+              src={resolveImageUrl(template.imagePath)}
               alt={template.name}
               className="template-editor-image"
               onLoad={handleImageLoad}
@@ -680,9 +686,7 @@ export default function TemplateEditorPage() {
                   y: certificateIdConfig.y * imgSize.height,
                 }}
                 bounds="parent"
-                onDragStop={(e, d) =>
-                  updateCertificateIdPosition(d.x, d.y)
-                }
+                onDragStop={(e, d) => updateCertificateIdPosition(d.x, d.y)}
                 onResizeStop={(e, direction, ref, delta, pos) =>
                   updateCertificateIdSize(
                     ref.offsetWidth,

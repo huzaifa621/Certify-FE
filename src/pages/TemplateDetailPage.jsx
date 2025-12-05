@@ -8,6 +8,12 @@ import { API_BASE_URL } from "../config";
 const QR_PLACEHOLDER_DATA_URL =
   "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='white'/><rect x='5' y='5' width='25' height='25' fill='black'/><rect x='70' y='5' width='25' height='25' fill='black'/><rect x='5' y='70' width='25' height='25' fill='black'/><rect x='40' y='40' width='20' height='20' fill='black'/></svg>";
 
+function resolveImageUrl(path) {
+  if (!path) return "";
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  return `${API_BASE_URL}${path}`;
+}
+
 export default function TemplateDetailPage() {
   // NOTE: /templatedetail/:id where :id is templateCode
   const { id } = useParams();
@@ -108,12 +114,31 @@ export default function TemplateDetailPage() {
     );
   }
 
-  function handleDownloadTemplateFile() {
+  async function handleDownloadTemplateFile() {
     if (!template) return;
-    downloadFile(
-      `/templates/${id}/download`,
-      `${template.name.replace(/\s+/g, "_")}.png`
-    );
+    
+    try {
+      const downloadUrl = resolveImageUrl(template.imagePath);
+      
+      // Download the file directly
+      const response = await fetch(downloadUrl);
+      if (!response.ok) throw new Error('Download failed');
+      
+      const blob = await response.blob();
+      const href = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = href;
+      a.download = `${template.name.replace(/\s+/g, "_")}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(href);
+      
+      toast.success("Template downloaded");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to download template");
+    }
   }
 
   // Generate Batch Modal handlers
@@ -263,7 +288,7 @@ export default function TemplateDetailPage() {
             <button
               type="button"
               className="btn-pill btn-light"
-              onClick={() => navigate(-1)}
+              onClick={() => navigate("/")}
             >
               Back
             </button>
@@ -272,7 +297,7 @@ export default function TemplateDetailPage() {
           <div className="template-detail-preview-wrapper">
             <div className="template-detail-preview-inner">
               <img
-                src={`${API_BASE_URL}${template.imagePath}`}
+                src={resolveImageUrl(template.imagePath)}
                 alt={template.name}
                 className="template-detail-image"
               />

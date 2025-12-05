@@ -4,6 +4,12 @@ import { useParams } from "react-router-dom";
 import client from "../api/client";
 import { API_BASE_URL } from "../config";
 
+function resolveFileUrl(path) {
+  if (!path) return "";
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  return `${API_BASE_URL}${path}`;
+}
+
 export default function VerifyCertificatePage() {
   const { certId } = useParams();
 
@@ -107,7 +113,7 @@ export default function VerifyCertificatePage() {
 
         <div className="verify-image-wrapper">
           <img
-            src={`${API_BASE_URL}${cert.filePath}`}
+            src={resolveFileUrl(cert.filePath)}
             alt="Verified Certificate"
             className="verify-image"
           />

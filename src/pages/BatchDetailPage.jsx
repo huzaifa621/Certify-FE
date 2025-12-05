@@ -1,9 +1,15 @@
 // src/pages/BatchDetailPage.jsx
-import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import toast from 'react-hot-toast';
-import client from '../api/client';
-import { API_BASE_URL } from '../config';
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import toast from "react-hot-toast";
+import client from "../api/client";
+import { API_BASE_URL } from "../config";
+
+function resolveFileUrl(path) {
+  if (!path) return "";
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  return `${API_BASE_URL}${path}`;
+}
 
 export default function BatchDetailPage() {
   const { id } = useParams(); // batchCode or _id
@@ -25,9 +31,9 @@ export default function BatchDetailPage() {
         setBatch(res.data);
       } catch (err) {
         if (err.response?.status === 401) {
-          navigate('/login', { replace: true });
+          navigate("/login", { replace: true });
         } else {
-          toast.error(err.response?.data?.message || 'Failed to load batch');
+          toast.error(err.response?.data?.message || "Failed to load batch");
         }
       } finally {
         setLoading(false);
@@ -44,9 +50,7 @@ export default function BatchDetailPage() {
 
       // Prefer templateCode if present, fall back to _id or any templateId field
       const templateRef =
-        batch.template?.templateCode ||
-        batch.template?._id ||
-        batch.templateId;
+        batch.template?.templateCode || batch.template?._id || batch.templateId;
 
       if (!templateRef) return;
 
@@ -54,7 +58,7 @@ export default function BatchDetailPage() {
         const res = await client.get(`/templates/${templateRef}`);
         setTemplateMeta(res.data);
       } catch (err) {
-        console.error('Failed to load template meta for batch', err);
+        console.error("Failed to load template meta for batch", err);
       }
     }
 
@@ -63,7 +67,7 @@ export default function BatchDetailPage() {
 
   // ---------- Helpers ----------
   function formatDate(dateStr) {
-    if (!dateStr) return '-';
+    if (!dateStr) return "-";
     const d = new Date(dateStr);
     return d.toLocaleString();
   }
@@ -71,8 +75,7 @@ export default function BatchDetailPage() {
   function handleBack() {
     // Try to navigate back to template detail using stable templateCode
     if (batch?.template) {
-      const templateId =
-        batch.template.templateCode || batch.template._id;
+      const templateId = batch.template.templateCode || batch.template._id;
       if (templateId) {
         navigate(`/templatedetail/${templateId}`);
         return;
@@ -80,8 +83,7 @@ export default function BatchDetailPage() {
     }
 
     if (templateMeta) {
-      const templateId =
-        templateMeta.templateCode || templateMeta._id;
+      const templateId = templateMeta.templateCode || templateMeta._id;
       if (templateId) {
         navigate(`/templatedetail/${templateId}`);
         return;
@@ -98,56 +100,50 @@ export default function BatchDetailPage() {
 
   function getCertUrl(cert) {
     const path = cert.filePath || cert.url || cert.path;
-    if (!path) return '';
-    return `${API_BASE_URL}${path}`;
+    return resolveFileUrl(path);
   }
 
   function getCertNameFromData(cert) {
     if (cert.name) return cert.name;
     const data = cert.data || {};
     return (
-      data.Name ||
-      data['Student Name'] ||
-      data['Full Name'] ||
-      data.name ||
-      ''
+      data.Name || data["Student Name"] || data["Full Name"] || data.name || ""
     );
   }
 
   // TRUE download (no “open in tab”)
   async function handleDownloadCertificate(cert) {
-    const path = cert.filePath || cert.url || cert.path;
-    if (!path) {
-      toast.error('Certificate file not available');
+    const url = getCertUrl(cert);
+    if (!url) {
+      toast.error("Certificate file not available");
       return;
     }
 
-    const absoluteUrl = `${API_BASE_URL}${path}`;
     try {
-      const res = await fetch(absoluteUrl);
+      const res = await fetch(url);
       if (!res.ok) {
-        throw new Error('Download failed');
+        throw new Error("Download failed");
       }
       const blob = await res.blob();
       const href = URL.createObjectURL(blob);
 
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = href;
-      a.download = `${cert.email || 'certificate'}.png`;
+      a.download = `${cert.email || "certificate"}.png`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(href);
     } catch (err) {
       console.error(err);
-      toast.error('Failed to download certificate');
+      toast.error("Failed to download certificate");
     }
   }
 
   if (loading) {
     return (
       <div className="batch-page">
-        <p style={{ padding: 24, textAlign: 'center' }}>Loading batch...</p>
+        <p style={{ padding: 24, textAlign: "center" }}>Loading batch...</p>
       </div>
     );
   }
@@ -155,7 +151,7 @@ export default function BatchDetailPage() {
   if (!batch) {
     return (
       <div className="batch-page">
-        <p style={{ padding: 24, textAlign: 'center' }}>Batch not found</p>
+        <p style={{ padding: 24, textAlign: "center" }}>Batch not found</p>
       </div>
     );
   }
@@ -169,7 +165,7 @@ export default function BatchDetailPage() {
     templateMeta?.name ||
     batch.templateName ||
     batch.template?.name ||
-    'Template';
+    "Template";
 
   const templateIdDisplay =
     templateMeta?.templateCode ||
@@ -177,22 +173,18 @@ export default function BatchDetailPage() {
     batch.template?.templateCode ||
     batch.template?._id ||
     batch.templateId ||
-    '';
+    "";
 
   const templatePreviewUrl =
-    (templateMeta?.imagePath &&
-      `${API_BASE_URL}${templateMeta.imagePath}`) ||
-    (batch.template?.imagePath &&
-      `${API_BASE_URL}${batch.template.imagePath}`) ||
+    resolveFileUrl(templateMeta?.imagePath) ||
+    resolveFileUrl(batch.template?.imagePath) ||
     null;
 
   // Dynamic columns for all fields (from CSV row)
   let dynamicFieldLabels = [];
   if (certificates.length && certificates[0].data) {
     const keys = Object.keys(certificates[0].data);
-    dynamicFieldLabels = keys.filter(
-      key => key.toLowerCase() !== 'email'
-    );
+    dynamicFieldLabels = keys.filter((key) => key.toLowerCase() !== "email");
   }
 
   return (
@@ -225,7 +217,7 @@ export default function BatchDetailPage() {
                 )}
                 <br />
                 <span>
-                  Total certificates: {certificates.length} • Created:{' '}
+                  Total certificates: {certificates.length} • Created:{" "}
                   {formatDate(batch.createdAt)}
                 </span>
               </p>
@@ -270,7 +262,7 @@ export default function BatchDetailPage() {
                 <tr>
                   <th>#</th>
                   <th>Email</th>
-                  {dynamicFieldLabels.map(label => (
+                  {dynamicFieldLabels.map((label) => (
                     <th key={label}>{label}</th>
                   ))}
                   <th>Certificate</th>
@@ -288,10 +280,8 @@ export default function BatchDetailPage() {
                       <td>{index + 1}</td>
                       <td>{cert.email}</td>
 
-                      {dynamicFieldLabels.map(label => (
-                        <td key={label}>
-                          {data[label] ?? ''}
-                        </td>
+                      {dynamicFieldLabels.map((label) => (
+                        <td key={label}>{data[label] ?? ""}</td>
                       ))}
 
                       <td>

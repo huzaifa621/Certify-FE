@@ -1,9 +1,15 @@
 // src/pages/TemplatesPage.jsx
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import client from '../api/client';
-import toast from 'react-hot-toast';
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import client from "../api/client";
+import toast from "react-hot-toast";
 import { API_BASE_URL } from "../config";
+
+function resolveImageUrl(path) {
+  if (!path) return "";
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  return `${API_BASE_URL}${path}`;
+}
 
 export default function TemplatesPage() {
   const navigate = useNavigate();
@@ -12,7 +18,7 @@ export default function TemplatesPage() {
   const [page, setPage] = useState(1);
   const limit = 5;
 
-  const [name, setName] = useState('');
+  const [name, setName] = useState("");
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -20,26 +26,27 @@ export default function TemplatesPage() {
   async function fetchTemplates(pageToLoad = 1) {
     try {
       setLoading(true);
-      const res = await client.get('/templates', {
+      const res = await client.get("/templates", {
         params: { page: pageToLoad, limit },
       });
 
       // Defensive in case backend shape changes
-      const items =
-        Array.isArray(res.data.items)
-          ? res.data.items
-          : Array.isArray(res.data.templates)
-          ? res.data.templates
-          : [];
+      const items = Array.isArray(res.data.items)
+        ? res.data.items
+        : Array.isArray(res.data.templates)
+        ? res.data.templates
+        : [];
 
       setTemplates(items);
-      setTotal(typeof res.data.total === 'number' ? res.data.total : items.length);
-      setPage(typeof res.data.page === 'number' ? res.data.page : pageToLoad);
+      setTotal(
+        typeof res.data.total === "number" ? res.data.total : items.length
+      );
+      setPage(typeof res.data.page === "number" ? res.data.page : pageToLoad);
     } catch (err) {
       if (err.response?.status === 401) {
-        navigate('/login', { replace: true });
+        navigate("/login", { replace: true });
       } else {
-        toast.error(err.response?.data?.message || 'Failed to load templates');
+        toast.error(err.response?.data?.message || "Failed to load templates");
       }
     } finally {
       setLoading(false);
@@ -55,39 +62,39 @@ export default function TemplatesPage() {
   async function handleUpload(e) {
     e.preventDefault();
     if (!name.trim()) {
-      toast.error('Template name is required');
+      toast.error("Template name is required");
       return;
     }
     if (!file) {
-      toast.error('Template image is required');
+      toast.error("Template image is required");
       return;
     }
-    if (!file.type.startsWith('image/')) {
-      toast.error('Only image files (JPG/PNG) are allowed');
+    if (!file.type.startsWith("image/")) {
+      toast.error("Only image files (JPG/PNG) are allowed");
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      toast.error('File size must be less than 10 MB');
+      toast.error("File size must be less than 10 MB");
       return;
     }
 
     try {
       setUploading(true);
       const formData = new FormData();
-      formData.append('name', name.trim());
-      formData.append('file', file);
+      formData.append("name", name.trim());
+      formData.append("file", file);
 
-      await client.post('/templates', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      await client.post("/templates", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
-      toast.success('Template uploaded successfully');
-      setName('');
+      toast.success("Template uploaded successfully");
+      setName("");
       setFile(null);
       // Re-fetch page 1 as per your backend behavior
       fetchTemplates(1);
     } catch (err) {
-      const msg = err.response?.data?.message || 'Failed to upload template';
+      const msg = err.response?.data?.message || "Failed to upload template";
       toast.error(msg);
     } finally {
       setUploading(false);
@@ -122,25 +129,25 @@ export default function TemplatesPage() {
     try {
       const id = getTemplateId(template);
       await client.delete(`/templates/${id}`);
-      toast.success('Template deleted');
+      toast.success("Template deleted");
       fetchTemplates(page);
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to delete template');
+      toast.error(err.response?.data?.message || "Failed to delete template");
     }
   }
 
   // Rename flow: for now a simple prompt; later we can replace with a custom modal UI.
   async function handleRename(template) {
-    const newName = window.prompt('Enter new template name', template.name);
+    const newName = window.prompt("Enter new template name", template.name);
     if (!newName || newName.trim() === template.name) return;
 
     try {
       const id = getTemplateId(template);
       await client.put(`/templates/${id}`, { name: newName.trim() });
-      toast.success('Template renamed');
+      toast.success("Template renamed");
       fetchTemplates(page);
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to rename template');
+      toast.error(err.response?.data?.message || "Failed to rename template");
     }
   }
 
@@ -168,13 +175,13 @@ export default function TemplatesPage() {
             <input
               type="text"
               value={name}
-              onChange={e => setName(e.target.value)}
+              onChange={(e) => setName(e.target.value)}
               placeholder="Enter template name"
             />
           </label>
           <input type="file" onChange={handleFileChange} />
           <button type="submit" disabled={uploading}>
-            {uploading ? 'Uploading...' : 'Upload'}
+            {uploading ? "Uploading..." : "Upload"}
           </button>
         </form>
       </section>
@@ -212,7 +219,7 @@ export default function TemplatesPage() {
                     </td>
                     <td>
                       <img
-                        src={`${API_BASE_URL}${t.imagePath}`}
+                        src={resolveImageUrl(t.imagePath)}
                         alt={t.name}
                         className="template-thumb"
                       />
@@ -229,7 +236,10 @@ export default function TemplatesPage() {
                         >
                           Delete
                         </button>
-                        <button type="button" onClick={() => handleAddFields(t)}>
+                        <button
+                          type="button"
+                          onClick={() => handleAddFields(t)}
+                        >
                           Add Fields
                         </button>
                       </div>
@@ -251,7 +261,7 @@ export default function TemplatesPage() {
               <button
                 key={i + 1}
                 onClick={() => goToPage(i + 1)}
-                className={page === i + 1 ? 'active' : ''}
+                className={page === i + 1 ? "active" : ""}
               >
                 {i + 1}
               </button>
