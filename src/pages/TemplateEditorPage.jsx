@@ -61,6 +61,7 @@ export default function TemplateEditorPage() {
   // Image size
   const imgRef = useRef(null);
   const [imgSize, setImgSize] = useState({ width: 0, height: 0 });
+  const [naturalImgSize, setNaturalImgSize] = useState({ width: 0, height: 0 });
 
   /* -------------------- Utility -------------------- */
 
@@ -68,6 +69,25 @@ export default function TemplateEditorPage() {
     const v = Number(value);
     if (isNaN(v)) return 0;
     return Math.max(0, Math.min(1, v));
+  }
+
+  // Dynamic font size scaling - matches backend logic exactly
+  // Font sizes scale proportionally to template height
+  // Reference: 800px height template (standard preview size)
+  function getEffectiveFontSize(configuredSize, naturalHeight, displayHeight) {
+    if (!naturalHeight || !displayHeight) return configuredSize || 24;
+    
+    const REFERENCE_HEIGHT = 800;
+    
+    // Calculate what the font size should be on the actual template
+    const scaleFactor = naturalHeight / REFERENCE_HEIGHT;
+    const scaledFontSize = (configuredSize || 24) * scaleFactor;
+    
+    // Now scale it down to display size for preview
+    const displayScaleFactor = displayHeight / naturalHeight;
+    const displayFontSize = scaledFontSize * displayScaleFactor;
+    
+    return Math.round(displayFontSize);
   }
 
   /* -------------------- Load Template -------------------- */
@@ -159,6 +179,11 @@ export default function TemplateEditorPage() {
     setImgSize({
       width: imgRef.current.clientWidth,
       height: imgRef.current.clientHeight,
+    });
+    // Also track the actual template dimensions (not the scaled display size)
+    setNaturalImgSize({
+      width: imgRef.current.naturalWidth,
+      height: imgRef.current.naturalHeight,
     });
   }
 
@@ -542,7 +567,7 @@ export default function TemplateEditorPage() {
                 const yPx = field.y * imgSize.height;
 
                 const textStyle = {
-                  fontSize: `${field.fontSize}px`,
+                  fontSize: `${getEffectiveFontSize(field.fontSize, naturalImgSize.height, imgSize.height)}px`,
                   color: field.fontColor,
                   fontWeight: field.fontWeight,
                   fontFamily: field.fontFamily,
@@ -729,7 +754,7 @@ export default function TemplateEditorPage() {
               >
                 <div
                   style={{
-                    fontSize: `${certificateIdConfig.fontSize}px`,
+                    fontSize: `${getEffectiveFontSize(certificateIdConfig.fontSize, naturalImgSize.height, imgSize.height)}px`,
                     fontWeight: certificateIdConfig.fontWeight,
                     fontStyle: certificateIdConfig.fontStyle,
                     fontFamily: "Arial, system-ui, sans-serif",
