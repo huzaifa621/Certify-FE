@@ -129,12 +129,13 @@ export default function TemplateEditorPage() {
 
         // Load QR config if present
         if (t.qrConfig && t.qrConfig.enabled) {
+          const qrWidth = clamp01(t.qrConfig.width ?? 0.15);
           setQrConfig({
             enabled: true,
             x: clamp01(t.qrConfig.x ?? 0.8),
             y: clamp01(t.qrConfig.y ?? 0.8),
-            width: clamp01(t.qrConfig.width ?? 0.15),
-            height: clamp01(t.qrConfig.height ?? 0.15),
+            width: qrWidth,
+            height: qrWidth, // Height always matches width (square QR)
           });
         } else {
           setQrConfig((prev) => ({ ...prev, enabled: false }));
@@ -373,8 +374,9 @@ export default function TemplateEditorPage() {
 
   function updateQrSize(widthPx, heightPx, xPx, yPx) {
     if (!imgSize.width || !imgSize.height) return;
-    const w = widthPx / imgSize.width;
-    const h = heightPx / imgSize.height;
+    // Use the smaller dimension to ensure square (lockAspectRatio should handle this, but be safe)
+    const sizePx = Math.min(widthPx, heightPx);
+    const size = sizePx / imgSize.width;
     const x = xPx / imgSize.width;
     const y = yPx / imgSize.height;
     setQrConfig((prev) =>
@@ -384,8 +386,8 @@ export default function TemplateEditorPage() {
             ...prev,
             x: clamp01(x),
             y: clamp01(y),
-            width: clamp01(w),
-            height: clamp01(h),
+            width: clamp01(size),
+            height: clamp01(size), // Height always matches width (square QR)
           }
     );
   }
@@ -894,6 +896,77 @@ export default function TemplateEditorPage() {
             )}
           </div>
 
+          {/* QR Code Settings */}
+          {qrConfig.enabled && (
+            <div className="template-editor-card">
+              <h3 className="template-editor-subtitle">
+                QR Code Settings
+              </h3>
+              <p className="template-editor-hint">
+                Adjust the position and size of the QR code on the certificate. QR codes are always square.
+              </p>
+
+              <label className="modal-label">
+                X Position (0–1)
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="1"
+                  className="modal-input"
+                  value={qrConfig.x}
+                  onChange={(e) =>
+                    setQrConfig((prev) => ({
+                      ...prev,
+                      x: clamp01(e.target.value),
+                    }))
+                  }
+                />
+              </label>
+
+              <label className="modal-label">
+                Y Position (0–1)
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="1"
+                  className="modal-input"
+                  value={qrConfig.y}
+                  onChange={(e) =>
+                    setQrConfig((prev) => ({
+                      ...prev,
+                      y: clamp01(e.target.value),
+                    }))
+                  }
+                />
+              </label>
+
+              <label className="modal-label">
+                Size / Width (0–1)
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.05"
+                  max="0.5"
+                  className="modal-input"
+                  value={qrConfig.width}
+                  onChange={(e) => {
+                    const newWidth = clamp01(e.target.value);
+                    setQrConfig((prev) => ({
+                      ...prev,
+                      width: newWidth,
+                      height: newWidth, // Height automatically matches width (square)
+                    }));
+                  }}
+                />
+              </label>
+              <p className="small-note" style={{ marginTop: '-8px', fontSize: '12px', color: '#6b7280' }}>
+                Height automatically matches width to keep QR square
+              </p>
+            </div>
+          )}
+
           {/* Certificate ID Settings */}
           {certificateIdConfig.enabled && (
             <div className="template-editor-card">
@@ -1005,6 +1078,80 @@ export default function TemplateEditorPage() {
                   <option value="center">Center</option>
                   <option value="right">Right</option>
                 </select>
+              </label>
+
+              <hr style={{ margin: '16px 0', border: 'none', borderTop: '1px solid #e5e7eb' }} />
+
+              <label className="modal-label">
+                X Position (0–1)
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="1"
+                  className="modal-input"
+                  value={certificateIdConfig.x}
+                  onChange={(e) =>
+                    setCertificateIdConfig((prev) => ({
+                      ...prev,
+                      x: clamp01(e.target.value),
+                    }))
+                  }
+                />
+              </label>
+
+              <label className="modal-label">
+                Y Position (0–1)
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="1"
+                  className="modal-input"
+                  value={certificateIdConfig.y}
+                  onChange={(e) =>
+                    setCertificateIdConfig((prev) => ({
+                      ...prev,
+                      y: clamp01(e.target.value),
+                    }))
+                  }
+                />
+              </label>
+
+              <label className="modal-label">
+                Width (0–1)
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.05"
+                  max="1"
+                  className="modal-input"
+                  value={certificateIdConfig.width}
+                  onChange={(e) =>
+                    setCertificateIdConfig((prev) => ({
+                      ...prev,
+                      width: clamp01(e.target.value),
+                    }))
+                  }
+                />
+              </label>
+
+              <label className="modal-label">
+                Height (0–1)
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  max="0.5"
+                  className="modal-input"
+                  value={certificateIdConfig.height}
+                  onChange={(e) =>
+                    setCertificateIdConfig((prev) => ({
+                      ...prev,
+                      height: clamp01(e.target.value),
+                    }))
+                  }
+                />
               </label>
             </div>
           )}
