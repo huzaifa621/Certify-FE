@@ -233,6 +233,7 @@ export default function TemplatesPage() {
                           type="button"
                           className="danger"
                           onClick={() => handleDelete(t)}
+                          disabled={true}
                         >
                           Delete
                         </button>
