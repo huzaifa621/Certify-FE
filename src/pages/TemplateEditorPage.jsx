@@ -1053,6 +1053,7 @@ export default function TemplateEditorPage() {
                   }
                 >
                   <option value="Arial">Arial</option>
+                  <option value="Poppins">Poppins</option>
                   <option value="Caladea">Caladea</option>
                   <option value="Georgia">Georgia</option>
                   <option value="Times New Roman">Times New Roman</option>
@@ -1277,6 +1278,7 @@ export default function TemplateEditorPage() {
                   }
                 >
                   <option value="Arial">Arial</option>
+                  <option value="Poppins">Poppins</option>
                   <option value="Caladea">Caladea</option>
                   <option value="Georgia">Georgia</option>
                   <option value="Times New Roman">Times New Roman</option>
