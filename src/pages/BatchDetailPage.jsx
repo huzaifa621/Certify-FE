@@ -21,6 +21,11 @@ export default function BatchDetailPage() {
   // Template meta (for template name & image)
   const [templateMeta, setTemplateMeta] = useState(null);
 
+  // Verification configuration state
+  const [visibleFields, setVisibleFields] = useState([]);
+  const [issuedDate, setIssuedDate] = useState("");
+  const [savingConfig, setSavingConfig] = useState(false);
+
   // ---------- Load batch ----------
   useEffect(() => {
     async function fetchBatch() {
@@ -29,6 +34,16 @@ export default function BatchDetailPage() {
         // backend accepts batchCode OR _id
         const res = await client.get(`/batches/${id}`);
         setBatch(res.data);
+        
+        // Initialize verification config
+        setVisibleFields(res.data.visibleVerificationFields || []);
+        if (res.data.issuedOnDate) {
+          // Convert to YYYY-MM-DD format for date input
+          const date = new Date(res.data.issuedOnDate);
+          setIssuedDate(date.toISOString().split('T')[0]);
+        } else {
+          setIssuedDate("");
+        }
       } catch (err) {
         if (err.response?.status === 401) {
           navigate("/login", { replace: true });
@@ -214,6 +229,58 @@ export default function BatchDetailPage() {
     }
   }
 
+  // ---------- Verification Configuration Handlers ----------
+  
+  function handleFieldToggle(fieldKey) {
+    setVisibleFields((prev) => {
+      if (prev.includes(fieldKey)) {
+        return prev.filter((f) => f !== fieldKey);
+      } else {
+        return [...prev, fieldKey];
+      }
+    });
+  }
+
+  async function handleSaveVerificationConfig() {
+    if (!batch) return;
+
+    try {
+      setSavingConfig(true);
+      toast.loading("Saving configuration...", { id: "save-config" });
+
+      const batchId = batch.batchCode || batch._id;
+      
+      // Prepare payload
+      const payload = {
+        visibleVerificationFields: visibleFields,
+      };
+
+      // Only include issuedOnDate if date is selected or if we need to clear it
+      if (issuedDate) {
+        payload.issuedOnDate = issuedDate;
+      } else if (batch.issuedOnDate) {
+        // If date was previously set but now cleared
+        payload.issuedOnDate = null;
+      }
+
+      await client.put(`/batches/${batchId}/verification-config`, payload);
+
+      toast.success("Configuration saved successfully", { id: "save-config" });
+      
+      // Refresh batch data
+      const res = await client.get(`/batches/${batchId}`);
+      setBatch(res.data);
+    } catch (err) {
+      console.error("Save config error:", err);
+      toast.error(
+        err.response?.data?.message || "Failed to save configuration",
+        { id: "save-config" }
+      );
+    } finally {
+      setSavingConfig(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="batch-page">
@@ -314,6 +381,73 @@ export default function BatchDetailPage() {
               />
             </div>
           )}
+
+          {/* Verification Configuration */}
+          <div className="batch-verification-config">
+            <h3 className="config-title">Verification Page Configuration</h3>
+            <p className="config-hint">
+              Select which fields should be visible on the public verification page.
+            </p>
+
+            <div className="config-fields">
+              {/* Certificate ID is always visible (not configurable) */}
+              <div className="config-field-row">
+                <label className="config-field-label disabled">
+                  <input
+                    type="checkbox"
+                    checked={true}
+                    disabled
+                  />
+                  <span>Certificate ID (always visible)</span>
+                </label>
+              </div>
+
+              {/* Dynamic fields from template */}
+              {templateMeta?.fields?.map((field) => (
+                <div key={field.key} className="config-field-row">
+                  <label className="config-field-label">
+                    <input
+                      type="checkbox"
+                      checked={visibleFields.includes(field.key)}
+                      onChange={() => handleFieldToggle(field.key)}
+                    />
+                    <span>{field.label || field.key}</span>
+                  </label>
+                </div>
+              ))}
+
+              {/* Issued Date field */}
+              <div className="config-field-row">
+                <label className="config-field-label">
+                  <input
+                    type="checkbox"
+                    checked={visibleFields.includes('issuedDate')}
+                    onChange={() => handleFieldToggle('issuedDate')}
+                  />
+                  <span>Issued Date</span>
+                </label>
+                
+                {visibleFields.includes('issuedDate') && (
+                  <input
+                    type="date"
+                    className="config-date-input"
+                    value={issuedDate}
+                    onChange={(e) => setIssuedDate(e.target.value)}
+                  />
+                )}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="btn-pill btn-primary"
+              onClick={handleSaveVerificationConfig}
+              disabled={savingConfig}
+              style={{ marginTop: '16px', width: '100%' }}
+            >
+              {savingConfig ? 'Saving...' : 'Save Configuration'}
+            </button>
+          </div>
         </section>
 
         {/* RIGHT: Certificates table */}
