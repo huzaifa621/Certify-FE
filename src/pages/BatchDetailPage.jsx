@@ -177,6 +177,43 @@ export default function BatchDetailPage() {
     }
   }
 
+  // Download CSV with email and image URLs
+  async function handleDownloadCsvLinks() {
+    if (!batch || !batch.certificates || batch.certificates.length === 0) {
+      toast.error("No certificates to download");
+      return;
+    }
+
+    const batchId = batch.batchCode || batch._id || id;
+
+    try {
+      toast.loading("Preparing CSV file...", { id: "download-csv" });
+
+      const res = await client.get(`/batches/${batchId}/download-csv`, {
+        responseType: "blob",
+      });
+
+      const blob = new Blob([res.data], { type: "text/csv" });
+      const href = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = href;
+      a.download = `${batch.name.replace(/\s+/g, "_")}_links.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(href);
+
+      toast.success("CSV downloaded!", { id: "download-csv" });
+    } catch (err) {
+      console.error("Download CSV error:", err);
+      toast.error(
+        err.response?.data?.message || "Failed to download CSV",
+        { id: "download-csv" }
+      );
+    }
+  }
+
   if (loading) {
     return (
       <div className="batch-page">
@@ -290,14 +327,23 @@ export default function BatchDetailPage() {
               </p>
             </div>
             {certificates.length > 0 && (
-              <button
-                type="button"
-                className="btn-pill btn-primary"
-                onClick={handleDownloadAllCertificates}
-                style={{ marginTop: '8px' }}
-              >
-                Download All ({certificates.length})
-              </button>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                <button
+                  type="button"
+                  className="btn-pill btn-primary"
+                  onClick={handleDownloadAllCertificates}
+                >
+                  Download All ({certificates.length})
+                </button>
+                <button
+                  type="button"
+                  className="btn-pill btn-dark"
+                  onClick={handleDownloadCsvLinks}
+                  title="Download CSV with email and image URLs"
+                >
+                  Download CSV Links
+                </button>
+              </div>
             )}
           </div>
 

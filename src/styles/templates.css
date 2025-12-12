@@ -186,12 +186,12 @@
   color: #f9fafb;
 }
 
-.actions button.danger {
-  background-color: #dc2626;
+.actions button.primary {
+  background-color: #2563eb;
 }
 
-.actions button:nth-child(3) {
-  background-color: #2563eb;
+.actions button.danger {
+  background-color: #dc2626;
 }
 
 /* Pagination */

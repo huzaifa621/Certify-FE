@@ -151,6 +151,30 @@ export default function TemplatesPage() {
     }
   }
 
+  // Clone flow: prompt with pre-filled name "{Original Name} (Copy)"
+  async function handleClone(template) {
+    const defaultName = `${template.name} (Copy)`;
+    const newName = window.prompt("Enter name for cloned template", defaultName);
+    
+    // User cancelled or entered empty name
+    if (!newName || !newName.trim()) return;
+
+    try {
+      const id = getTemplateId(template);
+      toast.loading("Cloning template...", { id: "clone-template" });
+      
+      await client.post(`/templates/${id}/clone`, { name: newName.trim() });
+      
+      toast.success("Template cloned successfully", { id: "clone-template" });
+      fetchTemplates(page);
+    } catch (err) {
+      toast.error(
+        err.response?.data?.message || "Failed to clone template",
+        { id: "clone-template" }
+      );
+    }
+  }
+
   function goToPage(p) {
     if (p < 1 || p > totalPages) return;
     fetchTemplates(p);
@@ -226,19 +250,30 @@ export default function TemplatesPage() {
                     </td>
                     <td>
                       <div className="actions">
-                        <button type="button" onClick={() => handleRename(t)}>
+                        <button 
+                          type="button" 
+                          className="primary"
+                          onClick={() => handleRename(t)}
+                        >
                           Rename
+                        </button>
+                        <button 
+                          type="button" 
+                          className="primary"
+                          onClick={() => handleClone(t)}
+                        >
+                          Clone
                         </button>
                         <button
                           type="button"
                           className="danger"
                           onClick={() => handleDelete(t)}
-                          disabled={true}
                         >
                           Delete
                         </button>
                         <button
                           type="button"
+                          className="primary"
                           onClick={() => handleAddFields(t)}
                         >
                           Add Fields
