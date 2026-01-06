@@ -50,10 +50,15 @@ export default function TemplateEditorPage() {
   // Modals
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showUpdateImageModal, setShowUpdateImageModal] = useState(false);
 
   // Add field drafts
   const [addLabel, setAddLabel] = useState("");
   const [addSampleText, setAddSampleText] = useState("");
+  
+  // Update image state
+  const [newImageFile, setNewImageFile] = useState(null);
+  const [updatingImage, setUpdatingImage] = useState(false);
 
   // Edit field draft
   const [editFieldDraft, setEditFieldDraft] = useState(null);
@@ -511,6 +516,68 @@ export default function TemplateEditorPage() {
     }
   }
 
+  /* -------------------- Update Template Image -------------------- */
+
+  function openUpdateImageModal() {
+    setShowUpdateImageModal(true);
+  }
+
+  function closeUpdateImageModal() {
+    setShowUpdateImageModal(false);
+    setNewImageFile(null);
+  }
+
+  function handleImageFileChange(e) {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith("image/")) {
+        toast.error("Only image files (JPG/PNG) are allowed");
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("File size must be less than 10 MB");
+        return;
+      }
+      setNewImageFile(file);
+    }
+  }
+
+  async function handleUpdateImage() {
+    if (!newImageFile) {
+      toast.error("Please select an image file");
+      return;
+    }
+
+    try {
+      setUpdatingImage(true);
+
+      const formData = new FormData();
+      formData.append("file", newImageFile);
+
+      const res = await client.put(`/templates/${id}/image`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      toast.success("Template image updated successfully");
+      
+      // Update the template in state with new image path
+      setTemplate((prev) => ({
+        ...prev,
+        imagePath: res.data.imagePath,
+      }));
+
+      // Close modal and reset state
+      closeUpdateImageModal();
+      
+      // Reload the page to show the new image
+      window.location.reload();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to update template image");
+    } finally {
+      setUpdatingImage(false);
+    }
+  }
+
   /* -------------------- Back -------------------- */
 
   function handleBack() {
@@ -832,6 +899,14 @@ export default function TemplateEditorPage() {
                   Remove Certificate ID
                 </button>
               )}
+
+              <button
+                className="btn-pill btn-light"
+                type="button"
+                onClick={openUpdateImageModal}
+              >
+                Update Template Image
+              </button>
 
               <button
                 className="btn-pill btn-dark"
@@ -1364,6 +1439,74 @@ export default function TemplateEditorPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* -------------------- Update Template Image Modal -------------------- */}
+      {showUpdateImageModal && (
+        <div className="modal-backdrop" onClick={closeUpdateImageModal}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+            <h2 className="modal-title">Update Template Image</h2>
+
+            <div className="modal-form">
+              {/* Warning Message */}
+              <div style={{
+                padding: "12px",
+                backgroundColor: "#fef3c7",
+                border: "1px solid #fbbf24",
+                borderRadius: "8px",
+                marginBottom: "16px",
+                fontSize: "14px",
+                color: "#92400e"
+              }}>
+                <strong>⚠️ Warning:</strong> Updating the template image will keep all existing field positions. 
+                Field positions might not align correctly with the new image. You may need to reposition fields after updating.
+              </div>
+
+              {/* File Input */}
+              <label className="modal-label">
+                Select New Template Image
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageFileChange}
+                  style={{ marginTop: "8px" }}
+                />
+              </label>
+
+              {/* Preview if file selected */}
+              {newImageFile && (
+                <div style={{ marginTop: "16px" }}>
+                  <p style={{ fontSize: "14px", marginBottom: "8px", fontWeight: 500 }}>
+                    Selected File: {newImageFile.name}
+                  </p>
+                  <p style={{ fontSize: "12px", color: "#6b7280" }}>
+                    Size: {(newImageFile.size / 1024 / 1024).toFixed(2)} MB
+                  </p>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="modal-actions" style={{ marginTop: "24px" }}>
+                <button
+                  type="button"
+                  className="btn-pill btn-light"
+                  onClick={closeUpdateImageModal}
+                  disabled={updatingImage}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn-pill btn-primary"
+                  onClick={handleUpdateImage}
+                  disabled={!newImageFile || updatingImage}
+                >
+                  {updatingImage ? "Updating..." : "Update Image"}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
