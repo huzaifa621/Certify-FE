@@ -42,14 +42,14 @@ export default function LoginPage() {
       <div className="login-card">
         <div className="login-left">
           {/* Placeholder illustration section */}
-          <div className="illustration">Illustration</div>
+          <div className="illustration">Certify Platform</div>
         </div>
 
         <div className="login-right">
           <div className="login-logo">Masai</div>
           <h1 className="login-title">Welcome Back</h1>
           <p className="login-subtitle">
-            Go ahead and login, get access to your incredible account!
+            
           </p>
 
           <form onSubmit={handleSubmit} className="login-form">
