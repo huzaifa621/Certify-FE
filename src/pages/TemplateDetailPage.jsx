@@ -116,14 +116,14 @@ export default function TemplateDetailPage() {
 
   async function handleDownloadTemplateFile() {
     if (!template) return;
-    
+
     try {
       const downloadUrl = resolveImageUrl(template.imagePath);
-      
+
       // Download the file directly
       const response = await fetch(downloadUrl);
-      if (!response.ok) throw new Error('Download failed');
-      
+      if (!response.ok) throw new Error("Download failed");
+
       const blob = await response.blob();
       const href = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -133,7 +133,7 @@ export default function TemplateDetailPage() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(href);
-      
+
       toast.success("Template downloaded");
     } catch (err) {
       console.error(err);
@@ -270,9 +270,9 @@ export default function TemplateDetailPage() {
     <div className="template-detail-page">
       {/* Reuse header */}
       <header className="templates-header">
-        <div className="logo">masai.</div>
+        <div className="logo">Masai</div>
         <h1>Templates</h1>
-        <div className="user-avatar">H</div>
+        <div className="user-avatar">A</div>
       </header>
 
       <main className="template-detail-main">
@@ -479,7 +479,7 @@ export default function TemplateDetailPage() {
       </main>
 
       <footer className="templates-footer">
-        <span>© 2025 Masai School. All Rights Reserved.</span>
+        <span>© 2026 Masai School. All Rights Reserved.</span>
       </footer>
 
       {/* Generate Batch Modal */}

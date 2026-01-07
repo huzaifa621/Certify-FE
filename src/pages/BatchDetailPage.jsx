@@ -34,13 +34,13 @@ export default function BatchDetailPage() {
         // backend accepts batchCode OR _id
         const res = await client.get(`/batches/${id}`);
         setBatch(res.data);
-        
+
         // Initialize verification config
         setVisibleFields(res.data.visibleVerificationFields || []);
         if (res.data.issuedOnDate) {
           // Convert to YYYY-MM-DD format for date input
           const date = new Date(res.data.issuedOnDate);
-          setIssuedDate(date.toISOString().split('T')[0]);
+          setIssuedDate(date.toISOString().split("T")[0]);
         } else {
           setIssuedDate("");
         }
@@ -222,15 +222,14 @@ export default function BatchDetailPage() {
       toast.success("CSV downloaded!", { id: "download-csv" });
     } catch (err) {
       console.error("Download CSV error:", err);
-      toast.error(
-        err.response?.data?.message || "Failed to download CSV",
-        { id: "download-csv" }
-      );
+      toast.error(err.response?.data?.message || "Failed to download CSV", {
+        id: "download-csv",
+      });
     }
   }
 
   // ---------- Verification Configuration Handlers ----------
-  
+
   function handleFieldToggle(fieldKey) {
     setVisibleFields((prev) => {
       if (prev.includes(fieldKey)) {
@@ -249,7 +248,7 @@ export default function BatchDetailPage() {
       toast.loading("Saving configuration...", { id: "save-config" });
 
       const batchId = batch.batchCode || batch._id;
-      
+
       // Prepare payload
       const payload = {
         visibleVerificationFields: visibleFields,
@@ -266,7 +265,7 @@ export default function BatchDetailPage() {
       await client.put(`/batches/${batchId}/verification-config`, payload);
 
       toast.success("Configuration saved successfully", { id: "save-config" });
-      
+
       // Refresh batch data
       const res = await client.get(`/batches/${batchId}`);
       setBatch(res.data);
@@ -332,9 +331,9 @@ export default function BatchDetailPage() {
     <div className="batch-page">
       {/* Header */}
       <header className="templates-header">
-        <div className="logo">masai.</div>
+        <div className="logo">Masai</div>
         <h1>Templates</h1>
-        <div className="user-avatar">H</div>
+        <div className="user-avatar">A</div>
       </header>
 
       <main className="batch-main">
@@ -386,18 +385,15 @@ export default function BatchDetailPage() {
           <div className="batch-verification-config">
             <h3 className="config-title">Verification Page Configuration</h3>
             <p className="config-hint">
-              Select which fields should be visible on the public verification page.
+              Select which fields should be visible on the public verification
+              page.
             </p>
 
             <div className="config-fields">
               {/* Certificate ID is always visible (not configurable) */}
               <div className="config-field-row">
                 <label className="config-field-label disabled">
-                  <input
-                    type="checkbox"
-                    checked={true}
-                    disabled
-                  />
+                  <input type="checkbox" checked={true} disabled />
                   <span>Certificate ID (always visible)</span>
                 </label>
               </div>
@@ -421,13 +417,13 @@ export default function BatchDetailPage() {
                 <label className="config-field-label">
                   <input
                     type="checkbox"
-                    checked={visibleFields.includes('issuedDate')}
-                    onChange={() => handleFieldToggle('issuedDate')}
+                    checked={visibleFields.includes("issuedDate")}
+                    onChange={() => handleFieldToggle("issuedDate")}
                   />
                   <span>Issued Date</span>
                 </label>
-                
-                {visibleFields.includes('issuedDate') && (
+
+                {visibleFields.includes("issuedDate") && (
                   <input
                     type="date"
                     className="config-date-input"
@@ -443,9 +439,9 @@ export default function BatchDetailPage() {
               className="btn-pill btn-primary"
               onClick={handleSaveVerificationConfig}
               disabled={savingConfig}
-              style={{ marginTop: '16px', width: '100%' }}
+              style={{ marginTop: "16px", width: "100%" }}
             >
-              {savingConfig ? 'Saving...' : 'Save Configuration'}
+              {savingConfig ? "Saving..." : "Save Configuration"}
             </button>
           </div>
         </section>
@@ -461,7 +457,7 @@ export default function BatchDetailPage() {
               </p>
             </div>
             {certificates.length > 0 && (
-              <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+              <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
                 <button
                   type="button"
                   className="btn-pill btn-primary"
@@ -550,7 +546,7 @@ export default function BatchDetailPage() {
       </main>
 
       <footer className="templates-footer">
-        <span>© 2025 Masai School. All Rights Reserved.</span>
+        <span>© 2026 Masai School. All Rights Reserved.</span>
       </footer>
     </div>
   );

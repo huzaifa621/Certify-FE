@@ -55,7 +55,7 @@ export default function TemplateEditorPage() {
   // Add field drafts
   const [addLabel, setAddLabel] = useState("");
   const [addSampleText, setAddSampleText] = useState("");
-  
+
   // Update image state
   const [newImageFile, setNewImageFile] = useState(null);
   const [updatingImage, setUpdatingImage] = useState(false);
@@ -81,17 +81,17 @@ export default function TemplateEditorPage() {
   // Reference: 800px height template (standard preview size)
   function getEffectiveFontSize(configuredSize, naturalHeight, displayHeight) {
     if (!naturalHeight || !displayHeight) return configuredSize || 24;
-    
+
     const REFERENCE_HEIGHT = 800;
-    
+
     // Calculate what the font size should be on the actual template
     const scaleFactor = naturalHeight / REFERENCE_HEIGHT;
     const scaledFontSize = (configuredSize || 24) * scaleFactor;
-    
+
     // Now scale it down to display size for preview
     const displayScaleFactor = displayHeight / naturalHeight;
     const displayFontSize = scaledFontSize * displayScaleFactor;
-    
+
     return Math.round(displayFontSize);
   }
 
@@ -559,7 +559,7 @@ export default function TemplateEditorPage() {
       });
 
       toast.success("Template image updated successfully");
-      
+
       // Update the template in state with new image path
       setTemplate((prev) => ({
         ...prev,
@@ -568,11 +568,13 @@ export default function TemplateEditorPage() {
 
       // Close modal and reset state
       closeUpdateImageModal();
-      
+
       // Reload the page to show the new image
       window.location.reload();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to update template image");
+      toast.error(
+        err.response?.data?.message || "Failed to update template image"
+      );
     } finally {
       setUpdatingImage(false);
     }
@@ -608,9 +610,9 @@ export default function TemplateEditorPage() {
     <div className="template-editor-page">
       {/* Header */}
       <header className="templates-header">
-        <div className="logo">masai.</div>
+        <div className="logo">Masai</div>
         <h1>Templates</h1>
-        <div className="user-avatar">H</div>
+        <div className="user-avatar">A</div>
       </header>
 
       <div className="template-editor-main">
@@ -636,7 +638,11 @@ export default function TemplateEditorPage() {
                 const yPx = field.y * imgSize.height;
 
                 const textStyle = {
-                  fontSize: `${getEffectiveFontSize(field.fontSize, naturalImgSize.height, imgSize.height)}px`,
+                  fontSize: `${getEffectiveFontSize(
+                    field.fontSize,
+                    naturalImgSize.height,
+                    imgSize.height
+                  )}px`,
                   color: field.fontColor,
                   fontWeight: field.fontWeight,
                   fontFamily: field.fontFamily,
@@ -823,7 +829,11 @@ export default function TemplateEditorPage() {
               >
                 <div
                   style={{
-                    fontSize: `${getEffectiveFontSize(certificateIdConfig.fontSize, naturalImgSize.height, imgSize.height)}px`,
+                    fontSize: `${getEffectiveFontSize(
+                      certificateIdConfig.fontSize,
+                      naturalImgSize.height,
+                      imgSize.height
+                    )}px`,
                     fontWeight: certificateIdConfig.fontWeight,
                     fontStyle: certificateIdConfig.fontStyle,
                     fontFamily: "Arial, system-ui, sans-serif",
@@ -974,11 +984,10 @@ export default function TemplateEditorPage() {
           {/* QR Code Settings */}
           {qrConfig.enabled && (
             <div className="template-editor-card">
-              <h3 className="template-editor-subtitle">
-                QR Code Settings
-              </h3>
+              <h3 className="template-editor-subtitle">QR Code Settings</h3>
               <p className="template-editor-hint">
-                Adjust the position and size of the QR code on the certificate. QR codes are always square.
+                Adjust the position and size of the QR code on the certificate.
+                QR codes are always square.
               </p>
 
               <label className="modal-label">
@@ -1036,7 +1045,14 @@ export default function TemplateEditorPage() {
                   }}
                 />
               </label>
-              <p className="small-note" style={{ marginTop: '-8px', fontSize: '12px', color: '#6b7280' }}>
+              <p
+                className="small-note"
+                style={{
+                  marginTop: "-8px",
+                  fontSize: "12px",
+                  color: "#6b7280",
+                }}
+              >
                 Height automatically matches width to keep QR square
               </p>
             </div>
@@ -1156,7 +1172,13 @@ export default function TemplateEditorPage() {
                 </select>
               </label>
 
-              <hr style={{ margin: '16px 0', border: 'none', borderTop: '1px solid #e5e7eb' }} />
+              <hr
+                style={{
+                  margin: "16px 0",
+                  border: "none",
+                  borderTop: "1px solid #e5e7eb",
+                }}
+              />
 
               <label className="modal-label">
                 X Position (0–1)
@@ -1451,17 +1473,21 @@ export default function TemplateEditorPage() {
 
             <div className="modal-form">
               {/* Warning Message */}
-              <div style={{
-                padding: "12px",
-                backgroundColor: "#fef3c7",
-                border: "1px solid #fbbf24",
-                borderRadius: "8px",
-                marginBottom: "16px",
-                fontSize: "14px",
-                color: "#92400e"
-              }}>
-                <strong>⚠️ Warning:</strong> Updating the template image will keep all existing field positions. 
-                Field positions might not align correctly with the new image. You may need to reposition fields after updating.
+              <div
+                style={{
+                  padding: "12px",
+                  backgroundColor: "#fef3c7",
+                  border: "1px solid #fbbf24",
+                  borderRadius: "8px",
+                  marginBottom: "16px",
+                  fontSize: "14px",
+                  color: "#92400e",
+                }}
+              >
+                <strong>⚠️ Warning:</strong> Updating the template image will
+                keep all existing field positions. Field positions might not
+                align correctly with the new image. You may need to reposition
+                fields after updating.
               </div>
 
               {/* File Input */}
@@ -1478,7 +1504,13 @@ export default function TemplateEditorPage() {
               {/* Preview if file selected */}
               {newImageFile && (
                 <div style={{ marginTop: "16px" }}>
-                  <p style={{ fontSize: "14px", marginBottom: "8px", fontWeight: 500 }}>
+                  <p
+                    style={{
+                      fontSize: "14px",
+                      marginBottom: "8px",
+                      fontWeight: 500,
+                    }}
+                  >
                     Selected File: {newImageFile.name}
                   </p>
                   <p style={{ fontSize: "12px", color: "#6b7280" }}>

@@ -154,24 +154,26 @@ export default function TemplatesPage() {
   // Clone flow: prompt with pre-filled name "{Original Name} (Copy)"
   async function handleClone(template) {
     const defaultName = `${template.name} (Copy)`;
-    const newName = window.prompt("Enter name for cloned template", defaultName);
-    
+    const newName = window.prompt(
+      "Enter name for cloned template",
+      defaultName
+    );
+
     // User cancelled or entered empty name
     if (!newName || !newName.trim()) return;
 
     try {
       const id = getTemplateId(template);
       toast.loading("Cloning template...", { id: "clone-template" });
-      
+
       await client.post(`/templates/${id}/clone`, { name: newName.trim() });
-      
+
       toast.success("Template cloned successfully", { id: "clone-template" });
       fetchTemplates(page);
     } catch (err) {
-      toast.error(
-        err.response?.data?.message || "Failed to clone template",
-        { id: "clone-template" }
-      );
+      toast.error(err.response?.data?.message || "Failed to clone template", {
+        id: "clone-template",
+      });
     }
   }
 
@@ -186,9 +188,9 @@ export default function TemplatesPage() {
     <div className="templates-page">
       {/* top bar */}
       <header className="templates-header">
-        <div className="logo">masai.</div>
+        <div className="logo">Masai</div>
         <h1>Templates</h1>
-        <div className="user-avatar">H</div>
+        <div className="user-avatar">A</div>
       </header>
 
       {/* upload bar */}
@@ -250,15 +252,15 @@ export default function TemplatesPage() {
                     </td>
                     <td>
                       <div className="actions">
-                        <button 
-                          type="button" 
+                        <button
+                          type="button"
                           className="primary"
                           onClick={() => handleRename(t)}
                         >
                           Rename
                         </button>
-                        <button 
-                          type="button" 
+                        <button
+                          type="button"
                           className="primary"
                           onClick={() => handleClone(t)}
                         >
@@ -314,7 +316,7 @@ export default function TemplatesPage() {
       </section>
 
       <footer className="templates-footer">
-        <span>© 2025 Masai School. All Rights Reserved.</span>
+        <span>© 2026 Masai School. All Rights Reserved.</span>
         {/* you can add social icons here */}
       </footer>
     </div>
