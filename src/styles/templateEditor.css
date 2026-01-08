@@ -25,14 +25,17 @@
   padding: 16px;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start; /* Changed from center to flex-start */
+  max-height: 90vh; /* Added max-height to wrapper for very tall images */
+  overflow-y: auto; /* Enable scrolling for extremely tall images */
+  overflow-x: hidden;
 }
 
 .template-editor-canvas-inner {
   position: relative;
   max-width: 100%;
-  max-height: 80vh;
-  overflow: hidden;
+  /* Removed max-height constraint - let image determine height */
+  width: fit-content; /* Added to wrap image properly */
 }
 
 .template-editor-image {

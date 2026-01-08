@@ -52,10 +52,13 @@ export default function TemplateEditorPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showUpdateImageModal, setShowUpdateImageModal] = useState(false);
 
+  // Preview mode
+  const [previewMode, setPreviewMode] = useState(false);
+
   // Add field drafts
   const [addLabel, setAddLabel] = useState("");
   const [addSampleText, setAddSampleText] = useState("");
-
+  
   // Update image state
   const [newImageFile, setNewImageFile] = useState(null);
   const [updatingImage, setUpdatingImage] = useState(false);
@@ -81,17 +84,17 @@ export default function TemplateEditorPage() {
   // Reference: 800px height template (standard preview size)
   function getEffectiveFontSize(configuredSize, naturalHeight, displayHeight) {
     if (!naturalHeight || !displayHeight) return configuredSize || 24;
-
+    
     const REFERENCE_HEIGHT = 800;
-
+    
     // Calculate what the font size should be on the actual template
     const scaleFactor = naturalHeight / REFERENCE_HEIGHT;
     const scaledFontSize = (configuredSize || 24) * scaleFactor;
-
+    
     // Now scale it down to display size for preview
     const displayScaleFactor = displayHeight / naturalHeight;
     const displayFontSize = scaledFontSize * displayScaleFactor;
-
+    
     return Math.round(displayFontSize);
   }
 
@@ -559,7 +562,7 @@ export default function TemplateEditorPage() {
       });
 
       toast.success("Template image updated successfully");
-
+      
       // Update the template in state with new image path
       setTemplate((prev) => ({
         ...prev,
@@ -568,13 +571,11 @@ export default function TemplateEditorPage() {
 
       // Close modal and reset state
       closeUpdateImageModal();
-
+      
       // Reload the page to show the new image
       window.location.reload();
     } catch (err) {
-      toast.error(
-        err.response?.data?.message || "Failed to update template image"
-      );
+      toast.error(err.response?.data?.message || "Failed to update template image");
     } finally {
       setUpdatingImage(false);
     }
@@ -610,9 +611,9 @@ export default function TemplateEditorPage() {
     <div className="template-editor-page">
       {/* Header */}
       <header className="templates-header">
-        <div className="logo">Masai</div>
+        <div className="logo">masai.</div>
         <h1>Templates</h1>
-        <div className="user-avatar">A</div>
+        <div className="user-avatar">H</div>
       </header>
 
       <div className="template-editor-main">
@@ -627,8 +628,8 @@ export default function TemplateEditorPage() {
               onLoad={handleImageLoad}
             />
 
-            {/* All fields */}
-            {imgSize.width > 0 &&
+            {/* All fields - Edit Mode */}
+            {!previewMode && imgSize.width > 0 &&
               fields.map((field) => {
                 const isSelected = field._id === selectedFieldId;
 
@@ -638,11 +639,7 @@ export default function TemplateEditorPage() {
                 const yPx = field.y * imgSize.height;
 
                 const textStyle = {
-                  fontSize: `${getEffectiveFontSize(
-                    field.fontSize,
-                    naturalImgSize.height,
-                    imgSize.height
-                  )}px`,
+                  fontSize: `${getEffectiveFontSize(field.fontSize, naturalImgSize.height, imgSize.height)}px`,
                   color: field.fontColor,
                   fontWeight: field.fontWeight,
                   fontFamily: field.fontFamily,
@@ -718,8 +715,49 @@ export default function TemplateEditorPage() {
                 );
               })}
 
-            {/* QR placeholder */}
-            {imgSize.width > 0 && qrConfig.enabled && (
+            {/* All fields - Preview Mode */}
+            {previewMode && imgSize.width > 0 &&
+              fields.map((field) => {
+                const widthPx = field.width * imgSize.width;
+                const heightPx = field.height * imgSize.height;
+                const xPx = field.x * imgSize.width;
+                const yPx = field.y * imgSize.height;
+
+                const textStyle = {
+                  position: "absolute",
+                  left: `${xPx}px`,
+                  top: `${yPx}px`,
+                  width: `${widthPx}px`,
+                  height: `${heightPx}px`,
+                  fontSize: `${getEffectiveFontSize(field.fontSize, naturalImgSize.height, imgSize.height)}px`,
+                  color: field.fontColor,
+                  fontWeight: field.fontWeight,
+                  fontFamily: field.fontFamily,
+                  textAlign: field.textAlign,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent:
+                    field.textAlign === "center"
+                      ? "center"
+                      : field.textAlign === "right"
+                      ? "flex-end"
+                      : "flex-start",
+                  padding: "2px 4px",
+                  overflow: "hidden",
+                  whiteSpace: "nowrap",
+                  textOverflow: "ellipsis",
+                  pointerEvents: "none",
+                };
+
+                return (
+                  <div key={field._id} style={textStyle}>
+                    {field.sampleText || field.label}
+                  </div>
+                );
+              })}
+
+            {/* QR placeholder - Edit Mode */}
+            {!previewMode && imgSize.width > 0 && qrConfig.enabled && (
               <Rnd
                 size={{
                   width: qrConfig.width * imgSize.width,
@@ -752,32 +790,57 @@ export default function TemplateEditorPage() {
                 style={{
                   zIndex: 6,
                   border: "2px solid rgba(22, 163, 74, 0.9)",
-                  background: "white",
+                  background: "rgba(22, 163, 74, 0.08)",
                   borderRadius: "6px",
-                  padding: "4px",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
-                <img
-                  src="data:image/svg+xml;utf8,
-        <svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'>
-          <rect width='200' height='200' fill='white'/>
-          <rect x='20' y='20' width='50' height='50' fill='black'/>
-          <rect x='130' y='20' width='50' height='50' fill='black'/>
-          <rect x='20' y='130' width='50' height='50' fill='black'/>
-          <rect x='80' y='80' width='40' height='40' fill='black'/>
-          <rect x='130' y='130' width='50' height='50' fill='black'/>
-        </svg>"
-                  alt="QR Preview"
-                  style={{ width: "100%", height: "100%" }}
-                />
+                <div style={{
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  color: "#16a34a",
+                  textAlign: "center",
+                  userSelect: "none",
+                }}>
+                  QR Code
+                </div>
               </Rnd>
             )}
 
-            {/* Certificate ID placeholder */}
-            {imgSize.width > 0 && certificateIdConfig.enabled && (
+            {/* QR placeholder - Preview Mode */}
+            {previewMode && imgSize.width > 0 && qrConfig.enabled && (
+              <div
+                style={{
+                  position: "absolute",
+                  left: `${qrConfig.x * imgSize.width}px`,
+                  top: `${qrConfig.y * imgSize.height}px`,
+                  width: `${qrConfig.width * imgSize.width}px`,
+                  height: `${qrConfig.width * imgSize.width}px`,
+                  background: "white",
+                  borderRadius: "8px",
+                  border: "2px solid #e5e7eb",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  pointerEvents: "none",
+                }}
+              >
+                <div style={{
+                  fontSize: "12px",
+                  fontWeight: 500,
+                  color: "#9ca3af",
+                  textAlign: "center",
+                  userSelect: "none",
+                }}>
+                  QR Code
+                </div>
+              </div>
+            )}
+
+            {/* Certificate ID placeholder - Edit Mode */}
+            {!previewMode && imgSize.width > 0 && certificateIdConfig.enabled && (
               <Rnd
                 size={{
                   width: certificateIdConfig.width * imgSize.width,
@@ -829,11 +892,7 @@ export default function TemplateEditorPage() {
               >
                 <div
                   style={{
-                    fontSize: `${getEffectiveFontSize(
-                      certificateIdConfig.fontSize,
-                      naturalImgSize.height,
-                      imgSize.height
-                    )}px`,
+                    fontSize: `${getEffectiveFontSize(certificateIdConfig.fontSize, naturalImgSize.height, imgSize.height)}px`,
                     fontWeight: certificateIdConfig.fontWeight,
                     fontStyle: certificateIdConfig.fontStyle,
                     fontFamily: "Arial, system-ui, sans-serif",
@@ -859,6 +918,40 @@ export default function TemplateEditorPage() {
                 </div>
               </Rnd>
             )}
+
+            {/* Certificate ID placeholder - Preview Mode */}
+            {previewMode && imgSize.width > 0 && certificateIdConfig.enabled && (
+              <div
+                style={{
+                  position: "absolute",
+                  left: `${certificateIdConfig.x * imgSize.width}px`,
+                  top: `${certificateIdConfig.y * imgSize.height}px`,
+                  width: `${certificateIdConfig.width * imgSize.width}px`,
+                  height: `${certificateIdConfig.height * imgSize.height}px`,
+                  fontSize: `${getEffectiveFontSize(certificateIdConfig.fontSize, naturalImgSize.height, imgSize.height)}px`,
+                  fontWeight: certificateIdConfig.fontWeight,
+                  fontStyle: certificateIdConfig.fontStyle,
+                  fontFamily: "Arial, system-ui, sans-serif",
+                  color: certificateIdConfig.fontColor,
+                  display: "flex",
+                  alignItems: "center",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  textAlign: certificateIdConfig.textAlign,
+                  justifyContent:
+                    certificateIdConfig.textAlign === "center"
+                      ? "center"
+                      : certificateIdConfig.textAlign === "right"
+                      ? "flex-end"
+                      : "flex-start",
+                  padding: "4px 8px",
+                  pointerEvents: "none",
+                }}
+              >
+                ABC12345XY
+              </div>
+            )}
           </div>
         </div>
 
@@ -866,10 +959,72 @@ export default function TemplateEditorPage() {
         <div className="template-editor-sidebar">
           {/* Top Card */}
           <div className="template-editor-card">
+            {/* Preview Mode Toggle */}
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "12px 16px",
+              backgroundColor: previewMode ? "#f0fdf4" : "#f3f4f6",
+              borderRadius: "8px",
+              marginBottom: "16px",
+              border: previewMode ? "2px solid #22c55e" : "2px solid #e5e7eb",
+            }}>
+              <span style={{
+                fontSize: "14px",
+                fontWeight: 600,
+                color: previewMode ? "#15803d" : "#374151",
+              }}>
+                {previewMode ? "📄 Preview Mode" : "✏️ Edit Mode"}
+              </span>
+              <label style={{
+                position: "relative",
+                display: "inline-block",
+                width: "50px",
+                height: "26px",
+                cursor: "pointer",
+              }}>
+                <input
+                  type="checkbox"
+                  checked={previewMode}
+                  onChange={(e) => setPreviewMode(e.target.checked)}
+                  style={{
+                    opacity: 0,
+                    width: 0,
+                    height: 0,
+                  }}
+                />
+                <span style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  backgroundColor: previewMode ? "#22c55e" : "#d1d5db",
+                  borderRadius: "34px",
+                  transition: "0.3s",
+                  cursor: "pointer",
+                }}>
+                  <span style={{
+                    position: "absolute",
+                    content: "",
+                    height: "20px",
+                    width: "20px",
+                    left: previewMode ? "26px" : "3px",
+                    bottom: "3px",
+                    backgroundColor: "white",
+                    borderRadius: "50%",
+                    transition: "0.3s",
+                  }} />
+                </span>
+              </label>
+            </div>
+
             <div className="template-editor-actions">
               <button
                 className="btn-pill btn-primary"
                 onClick={openAddFieldModal}
+                disabled={previewMode}
               >
                 Add New Field
               </button>
@@ -879,6 +1034,7 @@ export default function TemplateEditorPage() {
                   className="btn-pill btn-light"
                   type="button"
                   onClick={handleAddQr}
+                  disabled={previewMode}
                 >
                   Add QR Code
                 </button>
@@ -887,6 +1043,7 @@ export default function TemplateEditorPage() {
                   className="btn-pill btn-danger"
                   type="button"
                   onClick={handleRemoveQr}
+                  disabled={previewMode}
                 >
                   Remove QR
                 </button>
@@ -897,6 +1054,7 @@ export default function TemplateEditorPage() {
                   className="btn-pill btn-light"
                   type="button"
                   onClick={handleAddCertificateId}
+                  disabled={previewMode}
                 >
                   Add Certificate ID
                 </button>
@@ -905,6 +1063,7 @@ export default function TemplateEditorPage() {
                   className="btn-pill btn-danger"
                   type="button"
                   onClick={handleRemoveCertificateId}
+                  disabled={previewMode}
                 >
                   Remove Certificate ID
                 </button>
@@ -914,6 +1073,7 @@ export default function TemplateEditorPage() {
                 className="btn-pill btn-light"
                 type="button"
                 onClick={openUpdateImageModal}
+                disabled={previewMode}
               >
                 Update Template Image
               </button>
@@ -931,63 +1091,68 @@ export default function TemplateEditorPage() {
             </div>
 
             <p className="template-editor-hint">
-              Before saving, ensure you have placed all fields, the QR (if
-              added), and the Certificate ID (if added) correctly.
+              {previewMode 
+                ? "Preview mode shows how the certificate will look. Toggle off to edit fields."
+                : "Before saving, ensure you have placed all fields, the QR (if added), and the Certificate ID (if added) correctly. Use Preview Mode to see the final result."
+              }
             </p>
           </div>
 
-          {/* Field List */}
-          <div className="template-editor-card">
-            <p className="template-editor-hint">
-              Click a field to select, move or edit.
-            </p>
+          {/* Field List - Only visible in Edit Mode */}
+          {!previewMode && (
+            <div className="template-editor-card">
+              <p className="template-editor-hint">
+                Click a field to select, move or edit.
+              </p>
 
-            <div className="field-list">
-              {fields.map((f) => (
-                <div
-                  key={f._id}
-                  className={
-                    "field-item" +
-                    (f._id === selectedFieldId ? " selected" : "")
-                  }
-                  onClick={() => selectField(f._id)}
-                >
-                  <div className="field-item-label">{f.label}</div>
-                  <div className="field-item-text">
-                    {f.sampleText || "No sample text"}
+              <div className="field-list">
+                {fields.map((f) => (
+                  <div
+                    key={f._id}
+                    className={
+                      "field-item" +
+                      (f._id === selectedFieldId ? " selected" : "")
+                    }
+                    onClick={() => selectField(f._id)}
+                  >
+                    <div className="field-item-label">{f.label}</div>
+                    <div className="field-item-text">
+                      {f.sampleText || "No sample text"}
+                    </div>
                   </div>
-                </div>
-              ))}
-              {fields.length === 0 && (
-                <p className="small-note">No fields added yet.</p>
-              )}
-            </div>
+                ))}
+                {fields.length === 0 && (
+                  <p className="small-note">No fields added yet.</p>
+                )}
+              </div>
 
-            {selectedField && (
-              <div className="selected-field-actions">
-                <button
-                  className="btn-pill btn-dark"
-                  onClick={openEditFieldModal}
-                >
-                  Edit Selected Field
-                </button>
-                <button
-                  className="btn-pill btn-danger"
-                  onClick={handleDeleteSelectedField}
-                >
-                  Delete Selected Field
-                </button>
+              {selectedField && (
+                <div className="selected-field-actions">
+                  <button
+                    className="btn-pill btn-dark"
+                    onClick={openEditFieldModal}
+                  >
+                    Edit Selected Field
+                  </button>
+                  <button
+                    className="btn-pill btn-danger"
+                    onClick={handleDeleteSelectedField}
+                  >
+                    Delete Selected Field
+                  </button>
               </div>
             )}
           </div>
+          )}
 
-          {/* QR Code Settings */}
-          {qrConfig.enabled && (
+          {/* QR Code Settings - Only visible in Edit Mode */}
+          {!previewMode && qrConfig.enabled && (
             <div className="template-editor-card">
-              <h3 className="template-editor-subtitle">QR Code Settings</h3>
+              <h3 className="template-editor-subtitle">
+                QR Code Settings
+              </h3>
               <p className="template-editor-hint">
-                Adjust the position and size of the QR code on the certificate.
-                QR codes are always square.
+                Adjust the position and size of the QR code on the certificate. QR codes are always square.
               </p>
 
               <label className="modal-label">
@@ -1045,21 +1210,14 @@ export default function TemplateEditorPage() {
                   }}
                 />
               </label>
-              <p
-                className="small-note"
-                style={{
-                  marginTop: "-8px",
-                  fontSize: "12px",
-                  color: "#6b7280",
-                }}
-              >
+              <p className="small-note" style={{ marginTop: '-8px', fontSize: '12px', color: '#6b7280' }}>
                 Height automatically matches width to keep QR square
               </p>
             </div>
           )}
 
-          {/* Certificate ID Settings */}
-          {certificateIdConfig.enabled && (
+          {/* Certificate ID Settings - Only visible in Edit Mode */}
+          {!previewMode && certificateIdConfig.enabled && (
             <div className="template-editor-card">
               <h3 className="template-editor-subtitle">
                 Certificate ID Settings
@@ -1172,13 +1330,7 @@ export default function TemplateEditorPage() {
                 </select>
               </label>
 
-              <hr
-                style={{
-                  margin: "16px 0",
-                  border: "none",
-                  borderTop: "1px solid #e5e7eb",
-                }}
-              />
+              <hr style={{ margin: '16px 0', border: 'none', borderTop: '1px solid #e5e7eb' }} />
 
               <label className="modal-label">
                 X Position (0–1)
@@ -1473,21 +1625,17 @@ export default function TemplateEditorPage() {
 
             <div className="modal-form">
               {/* Warning Message */}
-              <div
-                style={{
-                  padding: "12px",
-                  backgroundColor: "#fef3c7",
-                  border: "1px solid #fbbf24",
-                  borderRadius: "8px",
-                  marginBottom: "16px",
-                  fontSize: "14px",
-                  color: "#92400e",
-                }}
-              >
-                <strong>⚠️ Warning:</strong> Updating the template image will
-                keep all existing field positions. Field positions might not
-                align correctly with the new image. You may need to reposition
-                fields after updating.
+              <div style={{
+                padding: "12px",
+                backgroundColor: "#fef3c7",
+                border: "1px solid #fbbf24",
+                borderRadius: "8px",
+                marginBottom: "16px",
+                fontSize: "14px",
+                color: "#92400e"
+              }}>
+                <strong>⚠️ Warning:</strong> Updating the template image will keep all existing field positions. 
+                Field positions might not align correctly with the new image. You may need to reposition fields after updating.
               </div>
 
               {/* File Input */}
@@ -1504,13 +1652,7 @@ export default function TemplateEditorPage() {
               {/* Preview if file selected */}
               {newImageFile && (
                 <div style={{ marginTop: "16px" }}>
-                  <p
-                    style={{
-                      fontSize: "14px",
-                      marginBottom: "8px",
-                      fontWeight: 500,
-                    }}
-                  >
+                  <p style={{ fontSize: "14px", marginBottom: "8px", fontWeight: 500 }}>
                     Selected File: {newImageFile.name}
                   </p>
                   <p style={{ fontSize: "12px", color: "#6b7280" }}>

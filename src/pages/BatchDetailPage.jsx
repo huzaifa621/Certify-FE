@@ -1,5 +1,5 @@
 // src/pages/BatchDetailPage.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import client from "../api/client";
@@ -26,6 +26,18 @@ export default function BatchDetailPage() {
   const [issuedDate, setIssuedDate] = useState("");
   const [savingConfig, setSavingConfig] = useState(false);
 
+  // CSV Download Modal state
+  const [showCsvModal, setShowCsvModal] = useState(false);
+  const [csvOptions, setCsvOptions] = useState({
+    certificateId: true, // Default checked
+    verifyLink: false,
+    idLink: false,
+    imageLink: false,
+  });
+
+  // Table container ref for horizontal scroll detection
+  const tableContainerRef = useRef(null);
+
   // ---------- Load batch ----------
   useEffect(() => {
     async function fetchBatch() {
@@ -34,13 +46,13 @@ export default function BatchDetailPage() {
         // backend accepts batchCode OR _id
         const res = await client.get(`/batches/${id}`);
         setBatch(res.data);
-
+        
         // Initialize verification config
         setVisibleFields(res.data.visibleVerificationFields || []);
         if (res.data.issuedOnDate) {
           // Convert to YYYY-MM-DD format for date input
           const date = new Date(res.data.issuedOnDate);
-          setIssuedDate(date.toISOString().split("T")[0]);
+          setIssuedDate(date.toISOString().split('T')[0]);
         } else {
           setIssuedDate("");
         }
@@ -79,6 +91,44 @@ export default function BatchDetailPage() {
 
     fetchTemplateMeta();
   }, [batch]);
+
+  // ---------- Handle table scroll shadows ----------
+  useEffect(() => {
+    const container = tableContainerRef.current;
+    if (!container) return;
+
+    function handleScroll() {
+      const { scrollLeft, scrollWidth, clientWidth } = container;
+      
+      // Check if scrolled from left edge
+      if (scrollLeft > 10) {
+        container.classList.add('scrolled-left');
+      } else {
+        container.classList.remove('scrolled-left');
+      }
+      
+      // Check if scrolled from right edge
+      if (scrollLeft < scrollWidth - clientWidth - 10) {
+        container.classList.add('scrolled-right');
+      } else {
+        container.classList.remove('scrolled-right');
+      }
+    }
+
+    // Initial check
+    handleScroll();
+    
+    // Add scroll listener
+    container.addEventListener('scroll', handleScroll);
+    
+    // Check on window resize
+    window.addEventListener('resize', handleScroll);
+    
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+    };
+  }, [batch]); // Re-run when batch changes (table content updates)
 
   // ---------- Helpers ----------
   function formatDate(dateStr) {
@@ -192,25 +242,91 @@ export default function BatchDetailPage() {
     }
   }
 
-  // Download CSV with email and image URLs
-  async function handleDownloadCsvLinks() {
+  // Open CSV download modal
+  function handleDownloadCsvLinks() {
     if (!batch || !batch.certificates || batch.certificates.length === 0) {
       toast.error("No certificates to download");
       return;
     }
+    setShowCsvModal(true);
+  }
 
-    const batchId = batch.batchCode || batch._id || id;
+  // Close CSV modal
+  function closeCsvModal() {
+    setShowCsvModal(false);
+  }
+
+  // Handle checkbox change
+  function handleCsvOptionChange(option) {
+    setCsvOptions((prev) => ({
+      ...prev,
+      [option]: !prev[option],
+    }));
+  }
+
+  // Download CSV with selected columns
+  function handleConfirmCsvDownload() {
+    // Check if at least one option is selected
+    const hasSelection = Object.values(csvOptions).some((val) => val);
+    if (!hasSelection) {
+      toast.error("Please select at least one option");
+      return;
+    }
 
     try {
-      toast.loading("Preparing CSV file...", { id: "download-csv" });
-
-      const res = await client.get(`/batches/${batchId}/download-csv`, {
-        responseType: "blob",
-      });
-
-      const blob = new Blob([res.data], { type: "text/csv" });
+      // Build CSV content
+      const csvLines = [];
+      
+      // Build header row
+      const headers = ["Email"];
+      if (csvOptions.certificateId) headers.push("Certificate ID");
+      if (csvOptions.verifyLink) headers.push("Verification Link");
+      if (csvOptions.idLink) headers.push("ID Link");
+      if (csvOptions.imageLink) headers.push("Certificate Image");
+      
+      csvLines.push(headers.join(","));
+      
+      // Base verification URL
+      const baseVerifyUrl = "https://verify.masaischool.com";
+      
+      // Build data rows
+      for (const cert of batch.certificates) {
+        const row = [];
+        
+        // Email (always included)
+        row.push(escapeCSVField(cert.email || ""));
+        
+        // Certificate ID
+        if (csvOptions.certificateId) {
+          row.push(escapeCSVField(cert.certificateId || ""));
+        }
+        
+        // Verification Link
+        if (csvOptions.verifyLink) {
+          const verifyLink = `${baseVerifyUrl}/certificates/${cert.certificateId}`;
+          row.push(escapeCSVField(verifyLink));
+        }
+        
+        // ID Link
+        if (csvOptions.idLink) {
+          const idLink = `${baseVerifyUrl}/id/${cert.certificateId}`;
+          row.push(escapeCSVField(idLink));
+        }
+        
+        // Image Link
+        if (csvOptions.imageLink) {
+          row.push(escapeCSVField(cert.filePath || ""));
+        }
+        
+        csvLines.push(row.join(","));
+      }
+      
+      const csvContent = csvLines.join("\n");
+      
+      // Create and download file
+      const blob = new Blob([csvContent], { type: "text/csv" });
       const href = URL.createObjectURL(blob);
-
+      
       const a = document.createElement("a");
       a.href = href;
       a.download = `${batch.name.replace(/\s+/g, "_")}_links.csv`;
@@ -218,18 +334,27 @@ export default function BatchDetailPage() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(href);
-
-      toast.success("CSV downloaded!", { id: "download-csv" });
+      
+      toast.success("CSV downloaded!");
+      closeCsvModal();
     } catch (err) {
       console.error("Download CSV error:", err);
-      toast.error(err.response?.data?.message || "Failed to download CSV", {
-        id: "download-csv",
-      });
+      toast.error("Failed to download CSV");
     }
   }
 
-  // ---------- Verification Configuration Handlers ----------
+  // Helper function to escape CSV fields
+  function escapeCSVField(field) {
+    if (!field) return "";
+    const str = String(field);
+    if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  }
 
+  // ---------- Verification Configuration Handlers ----------
+  
   function handleFieldToggle(fieldKey) {
     setVisibleFields((prev) => {
       if (prev.includes(fieldKey)) {
@@ -248,7 +373,7 @@ export default function BatchDetailPage() {
       toast.loading("Saving configuration...", { id: "save-config" });
 
       const batchId = batch.batchCode || batch._id;
-
+      
       // Prepare payload
       const payload = {
         visibleVerificationFields: visibleFields,
@@ -265,7 +390,7 @@ export default function BatchDetailPage() {
       await client.put(`/batches/${batchId}/verification-config`, payload);
 
       toast.success("Configuration saved successfully", { id: "save-config" });
-
+      
       // Refresh batch data
       const res = await client.get(`/batches/${batchId}`);
       setBatch(res.data);
@@ -331,9 +456,9 @@ export default function BatchDetailPage() {
     <div className="batch-page">
       {/* Header */}
       <header className="templates-header">
-        <div className="logo">Masai</div>
+        <div className="logo">masai.</div>
         <h1>Templates</h1>
-        <div className="user-avatar">A</div>
+        <div className="user-avatar">H</div>
       </header>
 
       <main className="batch-main">
@@ -385,15 +510,18 @@ export default function BatchDetailPage() {
           <div className="batch-verification-config">
             <h3 className="config-title">Verification Page Configuration</h3>
             <p className="config-hint">
-              Select which fields should be visible on the public verification
-              page.
+              Select which fields should be visible on the public verification page.
             </p>
 
             <div className="config-fields">
               {/* Certificate ID is always visible (not configurable) */}
               <div className="config-field-row">
                 <label className="config-field-label disabled">
-                  <input type="checkbox" checked={true} disabled />
+                  <input
+                    type="checkbox"
+                    checked={true}
+                    disabled
+                  />
                   <span>Certificate ID (always visible)</span>
                 </label>
               </div>
@@ -417,13 +545,13 @@ export default function BatchDetailPage() {
                 <label className="config-field-label">
                   <input
                     type="checkbox"
-                    checked={visibleFields.includes("issuedDate")}
-                    onChange={() => handleFieldToggle("issuedDate")}
+                    checked={visibleFields.includes('issuedDate')}
+                    onChange={() => handleFieldToggle('issuedDate')}
                   />
                   <span>Issued Date</span>
                 </label>
-
-                {visibleFields.includes("issuedDate") && (
+                
+                {visibleFields.includes('issuedDate') && (
                   <input
                     type="date"
                     className="config-date-input"
@@ -439,9 +567,9 @@ export default function BatchDetailPage() {
               className="btn-pill btn-primary"
               onClick={handleSaveVerificationConfig}
               disabled={savingConfig}
-              style={{ marginTop: "16px", width: "100%" }}
+              style={{ marginTop: '16px', width: '100%' }}
             >
-              {savingConfig ? "Saving..." : "Save Configuration"}
+              {savingConfig ? 'Saving...' : 'Save Configuration'}
             </button>
           </div>
         </section>
@@ -457,7 +585,7 @@ export default function BatchDetailPage() {
               </p>
             </div>
             {certificates.length > 0 && (
-              <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
                 <button
                   type="button"
                   className="btn-pill btn-primary"
@@ -482,72 +610,210 @@ export default function BatchDetailPage() {
               No certificates found in this batch.
             </p>
           ) : (
-            <table className="batch-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Email</th>
-                  {dynamicFieldLabels.map((label) => (
-                    <th key={label}>{label}</th>
-                  ))}
-                  <th>Certificate</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {certificates.map((cert, index) => {
-                  const url = getCertUrl(cert);
-                  const fallbackName = getCertNameFromData(cert);
-                  const data = cert.data || {};
+            <div className="batch-table-container" ref={tableContainerRef}>
+              <table className="batch-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Email</th>
+                    {dynamicFieldLabels.map((label) => (
+                      <th key={label}>{label}</th>
+                    ))}
+                    <th>Certificate</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {certificates.map((cert, index) => {
+                    const url = getCertUrl(cert);
+                    const fallbackName = getCertNameFromData(cert);
+                    const data = cert.data || {};
 
-                  return (
-                    <tr key={cert._id || index}>
-                      <td>{index + 1}</td>
-                      <td>{cert.email}</td>
+                    return (
+                      <tr key={cert._id || index}>
+                        <td>{index + 1}</td>
+                        <td>{cert.email}</td>
 
-                      {dynamicFieldLabels.map((label) => (
-                        <td key={label}>{data[label] ?? ""}</td>
-                      ))}
+                        {dynamicFieldLabels.map((label) => (
+                          <td key={label}>{data[label] ?? ""}</td>
+                        ))}
 
-                      <td>
-                        {url ? (
-                          <a
-                            href={url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="batch-cert-thumb-link"
+                        <td>
+                          {url ? (
+                            <a
+                              href={url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="batch-cert-thumb-link"
+                            >
+                              <img
+                                src={url}
+                                alt={fallbackName || cert.email}
+                                className="batch-cert-thumb"
+                              />
+                            </a>
+                          ) : (
+                            <span className="small-note">No file</span>
+                          )}
+                        </td>
+                        <td>
+                          <button
+                            type="button"
+                            className="btn-pill btn-primary"
+                            onClick={() => handleDownloadCertificate(cert)}
                           >
-                            <img
-                              src={url}
-                              alt={fallbackName || cert.email}
-                              className="batch-cert-thumb"
-                            />
-                          </a>
-                        ) : (
-                          <span className="small-note">No file</span>
-                        )}
-                      </td>
-                      <td>
-                        <button
-                          type="button"
-                          className="btn-pill btn-primary"
-                          onClick={() => handleDownloadCertificate(cert)}
-                        >
-                          Download
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                            Download
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </section>
       </main>
 
       <footer className="templates-footer">
-        <span>© 2026 Masai School. All Rights Reserved.</span>
+        <span>© 2025 Masai School. All Rights Reserved.</span>
       </footer>
+
+      {/* CSV Download Options Modal */}
+      {showCsvModal && (
+        <div className="modal-backdrop" onClick={closeCsvModal}>
+          <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ width: '480px', maxWidth: '90vw' }}>
+            <h2 className="modal-title">Select CSV Columns</h2>
+            <p style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '16px' }}>
+              Email column will always be included. Select additional columns:
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {/* Certificate ID */}
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'flex-start',
+                gap: '10px',
+                cursor: 'pointer',
+                padding: '10px',
+                borderRadius: '8px',
+                border: '1px solid #e5e7eb',
+                backgroundColor: csvOptions.certificateId ? '#eff6ff' : 'transparent'
+              }}>
+                <input
+                  type="checkbox"
+                  checked={csvOptions.certificateId}
+                  onChange={() => handleCsvOptionChange('certificateId')}
+                  style={{ marginTop: '3px', cursor: 'pointer' }}
+                />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '4px' }}>
+                    Certificate ID
+                  </div>
+                </div>
+              </label>
+
+              {/* Verification Link */}
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'flex-start',
+                gap: '10px',
+                cursor: 'pointer',
+                padding: '10px',
+                borderRadius: '8px',
+                border: '1px solid #e5e7eb',
+                backgroundColor: csvOptions.verifyLink ? '#eff6ff' : 'transparent'
+              }}>
+                <input
+                  type="checkbox"
+                  checked={csvOptions.verifyLink}
+                  onChange={() => handleCsvOptionChange('verifyLink')}
+                  style={{ marginTop: '3px', cursor: 'pointer' }}
+                />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '4px' }}>
+                    https://verify.masaischool.com/certificates/{'{certificateID}'}
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>
+                    This will redirect to the verification page. This is the same link which QR code redirects.
+                  </div>
+                </div>
+              </label>
+
+              {/* ID Link */}
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'flex-start',
+                gap: '10px',
+                cursor: 'pointer',
+                padding: '10px',
+                borderRadius: '8px',
+                border: '1px solid #e5e7eb',
+                backgroundColor: csvOptions.idLink ? '#eff6ff' : 'transparent'
+              }}>
+                <input
+                  type="checkbox"
+                  checked={csvOptions.idLink}
+                  onChange={() => handleCsvOptionChange('idLink')}
+                  style={{ marginTop: '3px', cursor: 'pointer' }}
+                />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '4px' }}>
+                    https://verify.masaischool.com/id/{'{certificateID}'}
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>
+                    This link will only display the certificate image, nothing else. This is perfect selection for the score cards.
+                  </div>
+                </div>
+              </label>
+
+              {/* Certificate Image Link */}
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'flex-start',
+                gap: '10px',
+                cursor: 'pointer',
+                padding: '10px',
+                borderRadius: '8px',
+                border: '1px solid #e5e7eb',
+                backgroundColor: csvOptions.imageLink ? '#eff6ff' : 'transparent'
+              }}>
+                <input
+                  type="checkbox"
+                  checked={csvOptions.imageLink}
+                  onChange={() => handleCsvOptionChange('imageLink')}
+                  style={{ marginTop: '3px', cursor: 'pointer' }}
+                />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '4px' }}>
+                    Certificate Image Link
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>
+                    Direct Supabase URL to the certificate image
+                  </div>
+                </div>
+              </label>
+            </div>
+
+            <div className="modal-actions" style={{ marginTop: '20px' }}>
+              <button
+                type="button"
+                className="btn-pill btn-light"
+                onClick={closeCsvModal}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn-pill btn-primary"
+                onClick={handleConfirmCsvDownload}
+              >
+                Download CSV
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

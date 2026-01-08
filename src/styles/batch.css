@@ -3,15 +3,36 @@
   display: flex;
   flex-direction: column;
   background-color: #f3f4f6;
+  overflow-x: hidden; /* Prevent horizontal viewport scroll */
 }
 
 .batch-main {
-  max-width: 1120px;
+  max-width: 1400px;
   width: 100%;
   margin: 24px auto 32px;
-  display: grid;
-  grid-template-columns: 1.4fr 1.6fr;
+  padding: 0 20px; /* Add padding to prevent touching edges */
+  display: flex;
   gap: 20px;
+  align-items: flex-start;
+  overflow-x: hidden; /* Prevent main container from causing viewport scroll */
+}
+
+/* Left sidebar - 25% of screen width */
+.batch-left {
+  flex: 0 0 25%;
+  min-width: 0; /* Allow flex item to shrink if needed */
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Right section - 65% of screen width */
+.batch-right {
+  flex: 0 0 75%;
+  min-width: 0; /* Allow flex item to shrink if needed */
+  max-width: 1600px; /* Limit max width on ultra-wide screens to ensure scroll */
+  display: flex;
+  flex-direction: column;
 }
 
 .batch-card {
@@ -69,11 +90,83 @@
   font-weight: 600;
 }
 
+/* Table Container with Horizontal Scroll */
+.batch-table-container {
+  position: relative;
+  overflow-x: auto;
+  overflow-y: auto; /* Changed from visible to auto for sticky to work */
+  margin-top: 8px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  max-height: 600px; /* Limit height so vertical scroll can happen */
+  max-width: 100%; /* Take full width of parent */
+  
+  /* Custom scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+.batch-table-container::-webkit-scrollbar {
+  height: 10px;
+  width: 10px; /* Add width for vertical scrollbar */
+}
+
+.batch-table-container::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.batch-table-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.batch-table-container::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Scroll Shadow Indicators */
+.batch-table-container::before,
+.batch-table-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 40px;
+  pointer-events: none;
+  z-index: 10; /* Above table content */
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+/* Left shadow - appears when scrolled right */
+.batch-table-container::before {
+  left: 0;
+  background: linear-gradient(to right, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.8) 30%, transparent 100%);
+}
+
+/* Right shadow - appears when scrolled left */
+.batch-table-container::after {
+  right: 0;
+  background: linear-gradient(to left, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.8) 30%, transparent 100%);
+}
+
+/* Show shadows when scrolled */
+.batch-table-container.scrolled-left::before {
+  opacity: 1;
+}
+
+.batch-table-container.scrolled-right::after {
+  opacity: 1;
+}
+
 /* Table */
 .batch-table {
-  width: 100%;
+  width: max-content; /* Let table expand to fit content */
   border-collapse: collapse;
-  margin-top: 8px;
+  margin: 0;
+  table-layout: auto; /* Allow table to expand based on content */
 }
 
 .batch-table th,
@@ -82,10 +175,24 @@
   font-size: 0.85rem;
   border-bottom: 1px solid #e5e7eb;
   vertical-align: middle;
+  white-space: nowrap; /* Prevent text wrapping - forces horizontal scroll */
+  min-width: 180px; /* Reasonable minimum per column */
+  max-width: 300px; /* Prevent columns from getting too wide */
 }
 
 .batch-table thead {
   background-color: #f9fafb;
+  position: sticky;
+  top: 0;
+  z-index: 10; /* Increased z-index */
+}
+
+.batch-table thead th {
+  border-bottom: 2px solid #e5e7eb;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  background-color: #f9fafb; /* Ensure background covers content below */
 }
 
 .batch-table tbody tr:hover {
@@ -205,11 +312,25 @@
 /* Responsive */
 @media (max-width: 900px) {
   .batch-main {
-    grid-template-columns: 1fr;
+    flex-direction: column;
     padding: 0 12px;
+  }
+  
+  .batch-left {
+    flex: 0 0 100%;
+  }
+  
+  .batch-right {
+    flex: 0 0 100%;
   }
 
   .batch-cert-thumb {
     width: 90px;
+  }
+  
+  .batch-table th,
+  .batch-table td {
+    font-size: 0.75rem;
+    padding: 8px 10px;
   }
 }
