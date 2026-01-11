@@ -357,7 +357,7 @@ export default function TemplateEditorPage() {
       return;
     }
 
-    // default bottom-right-ish
+    // Add QR Code at bottom-right
     setQrConfig({
       enabled: true,
       x: 0.8,
@@ -365,10 +365,29 @@ export default function TemplateEditorPage() {
       width: 0.15,
       height: 0.15,
     });
+
+    // Also add Certificate ID if not already added
+    if (!certificateIdConfig.enabled) {
+      setCertificateIdConfig({
+        enabled: true,
+        x: 0.1,
+        y: 0.05,
+        width: 0.3,
+        height: 0.06,
+        fontSize: 14,
+        fontWeight: 500,
+        fontColor: "#ffffff",
+        fontFamily: "Arial",
+        textAlign: "left",
+        fontStyle: "normal",
+      });
+    }
   }
 
   function handleRemoveQr() {
     setQrConfig((prev) => ({ ...prev, enabled: false }));
+    // Also remove Certificate ID when removing QR
+    setCertificateIdConfig((prev) => ({ ...prev, enabled: false }));
   }
 
   function updateQrPosition(xPx, yPx) {
@@ -1046,26 +1065,6 @@ export default function TemplateEditorPage() {
                   disabled={previewMode}
                 >
                   Remove QR
-                </button>
-              )}
-
-              {!certificateIdConfig.enabled ? (
-                <button
-                  className="btn-pill btn-light"
-                  type="button"
-                  onClick={handleAddCertificateId}
-                  disabled={previewMode}
-                >
-                  Add Certificate ID
-                </button>
-              ) : (
-                <button
-                  className="btn-pill btn-danger"
-                  type="button"
-                  onClick={handleRemoveCertificateId}
-                  disabled={previewMode}
-                >
-                  Remove Certificate ID
                 </button>
               )}
 

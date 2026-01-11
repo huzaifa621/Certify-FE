@@ -28,7 +28,7 @@
 
 /* Right section - 65% of screen width */
 .batch-right {
-  flex: 0 0 75%;
+  flex: 0 0 65%;
   min-width: 0; /* Allow flex item to shrink if needed */
   max-width: 1600px; /* Limit max width on ultra-wide screens to ensure scroll */
   display: flex;
@@ -126,41 +126,6 @@
   background: #94a3b8;
 }
 
-/* Scroll Shadow Indicators */
-.batch-table-container::before,
-.batch-table-container::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 40px;
-  pointer-events: none;
-  z-index: 10; /* Above table content */
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-/* Left shadow - appears when scrolled right */
-.batch-table-container::before {
-  left: 0;
-  background: linear-gradient(to right, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.8) 30%, transparent 100%);
-}
-
-/* Right shadow - appears when scrolled left */
-.batch-table-container::after {
-  right: 0;
-  background: linear-gradient(to left, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.8) 30%, transparent 100%);
-}
-
-/* Show shadows when scrolled */
-.batch-table-container.scrolled-left::before {
-  opacity: 1;
-}
-
-.batch-table-container.scrolled-right::after {
-  opacity: 1;
-}
-
 /* Table */
 .batch-table {
   width: max-content; /* Let table expand to fit content */
@@ -178,6 +143,7 @@
   white-space: nowrap; /* Prevent text wrapping - forces horizontal scroll */
   min-width: 180px; /* Reasonable minimum per column */
   max-width: 300px; /* Prevent columns from getting too wide */
+  text-align: left; /* Ensure consistent left alignment for headers and cells */
 }
 
 .batch-table thead {
