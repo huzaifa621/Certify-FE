@@ -1,17 +1,25 @@
 // src/pages/TemplateDetailPage.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import client from "../api/client";
 import toast from "react-hot-toast";
 import { API_BASE_URL } from "../config";
 
-const QR_PLACEHOLDER_DATA_URL =
-  "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='white'/><rect x='5' y='5' width='25' height='25' fill='black'/><rect x='70' y='5' width='25' height='25' fill='black'/><rect x='5' y='70' width='25' height='25' fill='black'/><rect x='40' y='40' width='20' height='20' fill='black'/></svg>";
-
 function resolveImageUrl(path) {
   if (!path) return "";
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
   return `${API_BASE_URL}${path}`;
+}
+
+/**
+ * Scale font size based on displayed image dimensions
+ * Maintains consistent font sizing regardless of zoom level
+ */
+function getEffectiveFontSize(baseFontSize, naturalHeight, displayHeight) {
+  if (!naturalHeight || !displayHeight) return baseFontSize;
+  const REFERENCE_HEIGHT = 800;
+  const scale = displayHeight / REFERENCE_HEIGHT;
+  return Math.round(baseFontSize * scale);
 }
 
 export default function TemplateDetailPage() {
@@ -23,6 +31,11 @@ export default function TemplateDetailPage() {
   const [batches, setBatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingBatches, setLoadingBatches] = useState(false);
+
+  // Image dimensions for font scaling
+  const imageRef = useRef(null);
+  const [imgSize, setImgSize] = useState({ width: 0, height: 0 });
+  const [naturalImgSize, setNaturalImgSize] = useState({ width: 0, height: 0 });
 
   // Generate Batch modal state
   const [showGenerateModal, setShowGenerateModal] = useState(false);
@@ -76,6 +89,21 @@ export default function TemplateDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  // Handle window resize to update displayed image size
+  useEffect(() => {
+    function handleResize() {
+      if (imageRef.current) {
+        setImgSize({
+          width: imageRef.current.offsetWidth,
+          height: imageRef.current.offsetHeight,
+        });
+      }
+    }
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   // Download helper (sample CSV, template file)
   async function downloadFile(url, filenameFallback) {
     try {
@@ -116,14 +144,14 @@ export default function TemplateDetailPage() {
 
   async function handleDownloadTemplateFile() {
     if (!template) return;
-
+    
     try {
       const downloadUrl = resolveImageUrl(template.imagePath);
-
+      
       // Download the file directly
       const response = await fetch(downloadUrl);
-      if (!response.ok) throw new Error("Download failed");
-
+      if (!response.ok) throw new Error('Download failed');
+      
       const blob = await response.blob();
       const href = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -133,7 +161,7 @@ export default function TemplateDetailPage() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(href);
-
+      
       toast.success("Template downloaded");
     } catch (err) {
       console.error(err);
@@ -270,9 +298,9 @@ export default function TemplateDetailPage() {
     <div className="template-detail-page">
       {/* Reuse header */}
       <header className="templates-header">
-        <div className="logo">Masai</div>
+        <div className="logo">masai.</div>
         <h1>Templates</h1>
-        <div className="user-avatar">A</div>
+        <div className="user-avatar">H</div>
       </header>
 
       <main className="template-detail-main">
@@ -297,9 +325,20 @@ export default function TemplateDetailPage() {
           <div className="template-detail-preview-wrapper">
             <div className="template-detail-preview-inner">
               <img
+                ref={imageRef}
                 src={resolveImageUrl(template.imagePath)}
                 alt={template.name}
                 className="template-detail-image"
+                onLoad={(e) => {
+                  setNaturalImgSize({
+                    width: e.target.naturalWidth,
+                    height: e.target.naturalHeight,
+                  });
+                  setImgSize({
+                    width: e.target.offsetWidth,
+                    height: e.target.offsetHeight,
+                  });
+                }}
               />
 
               {/* Overlay non-editable fields */}
@@ -320,7 +359,7 @@ export default function TemplateDetailPage() {
                       top,
                       width,
                       height,
-                      fontSize: `${field.fontSize || 24}px`,
+                      fontSize: `${getEffectiveFontSize(field.fontSize || 24, naturalImgSize.height, imgSize.height)}px`,
                       color: field.fontColor || "#000000",
                       fontWeight: field.fontWeight || 400,
                       fontFamily:
@@ -343,26 +382,54 @@ export default function TemplateDetailPage() {
               })}
 
               {/* QR preview overlay (non-editable) */}
-              {qr && (
-                <div
-                  className="template-detail-field-overlay template-detail-qr-overlay"
-                  style={{
-                    left: `${(qr.x ?? 0) * 100}%`,
-                    top: `${(qr.y ?? 0) * 100}%`,
-                    width: `${(qr.width ?? 0.15) * 100}%`,
-                    height: `${(qr.width ?? 0.15) * 100}%`, // square
-                    padding: 0,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <img
-                    src={QR_PLACEHOLDER_DATA_URL}
-                    alt="QR Code Preview"
-                    style={{ width: "100%", height: "100%" }}
-                  />
-                </div>
+              {qr && imgSize.width > 0 && (
+                (() => {
+                  // Calculate size in pixels based on image width
+                  const qrWidthPx = (qr.width ?? 0.15) * imgSize.width;
+                  const qrX = (qr.x ?? 0) * imgSize.width;
+                  const qrY = (qr.y ?? 0) * imgSize.height;
+                  
+                  return (
+                    <div
+                      className="template-detail-field-overlay template-detail-qr-overlay"
+                      style={{
+                        position: "absolute",
+                        left: `${qrX}px`,
+                        top: `${qrY}px`,
+                        width: `${qrWidthPx}px`,
+                        aspectRatio: "1 / 1", // Force square shape
+                        padding: "8px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: "white",
+                        border: "2px solid #10b981",
+                        borderRadius: "12px",
+                        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+                        boxSizing: "border-box",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: `${getEffectiveFontSize(14, naturalImgSize.height, imgSize.height)}px`,
+                          fontWeight: "600",
+                          color: "#059669",
+                          textAlign: "center",
+                          border: "2px dashed #10b981",
+                          borderRadius: "8px",
+                          padding: "4px",
+                        }}
+                      >
+                        QR<br/>Code
+                      </div>
+                    </div>
+                  );
+                })()
               )}
 
               {/* Certificate ID preview overlay (non-editable) */}
@@ -374,7 +441,7 @@ export default function TemplateDetailPage() {
                     top: `${(certIdCfg.y ?? 0) * 100}%`,
                     width: `${(certIdCfg.width ?? 0.3) * 100}%`,
                     height: `${(certIdCfg.height ?? 0.06) * 100}%`,
-                    fontSize: `${certIdCfg.fontSize ?? 14}px`,
+                    fontSize: `${getEffectiveFontSize(certIdCfg.fontSize ?? 14, naturalImgSize.height, imgSize.height)}px`,
                     color: certIdCfg.fontColor || "#111827",
                     fontWeight: certIdCfg.fontWeight || "500",
                     fontStyle: certIdCfg.fontStyle || "normal",
@@ -382,16 +449,18 @@ export default function TemplateDetailPage() {
                     textAlign: certIdCfg.textAlign || "left",
                     display: "flex",
                     alignItems: "center",
-                    padding: "4px 8px",
+                    justifyContent:
+                      certIdCfg.textAlign === "center"
+                        ? "center"
+                        : certIdCfg.textAlign === "right"
+                        ? "flex-end"
+                        : "flex-start",
+                    padding: "4px 8px", // Match backend and editor
                     whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
-                    background: "rgba(249, 115, 22, 0.06)",
-                    border: "1px dashed rgba(249, 115, 22, 0.7)",
-                    borderRadius: "4px",
                   }}
                 >
-                  {/* Only raw certificate string as preview */}
                   ABC12345XY
                 </div>
               )}
@@ -479,7 +548,7 @@ export default function TemplateDetailPage() {
       </main>
 
       <footer className="templates-footer">
-        <span>© 2026 Masai School. All Rights Reserved.</span>
+        <span>© 2025 Masai School. All Rights Reserved.</span>
       </footer>
 
       {/* Generate Batch Modal */}
