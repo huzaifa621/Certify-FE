@@ -673,7 +673,7 @@ export default function TemplateEditorPage() {
                       : field.textAlign === "right"
                       ? "flex-end"
                       : "flex-start",
-                  padding: "4px 6px",
+                  padding: "2px 4px", // ✓ Match backend and preview mode
                   overflow: "hidden",
                   whiteSpace: "nowrap",
                   textOverflow: "ellipsis",
@@ -904,7 +904,7 @@ export default function TemplateEditorPage() {
                   border: "2px solid rgba(249, 115, 22, 0.8)",
                   background: "rgba(249, 115, 22, 0.06)",
                   borderRadius: "8px",
-                  padding: "2px 4px",
+                  padding: "4px 8px", // ✓ Match backend and preview mode
                   display: "flex",
                   alignItems: "center",
                 }}
