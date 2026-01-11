@@ -303,7 +303,7 @@ export default function BatchDetailPage() {
         
         // Verification Link
         if (csvOptions.verifyLink) {
-          const verifyLink = `${baseVerifyUrl}/certificates/${cert.certificateId}`;
+          const verifyLink = `${baseVerifyUrl}/certificate/${cert.certificateId}`;
           row.push(escapeCSVField(verifyLink));
         }
         
@@ -732,7 +732,7 @@ export default function BatchDetailPage() {
                 />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '4px' }}>
-                    https://verify.masaischool.com/certificates/{'{certificateID}'}
+                    https://verify.masaischool.com/certificate/{'{certificateID}'}
                   </div>
                   <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>
                     This will redirect to the verification page. This is the same link which QR code redirects.
