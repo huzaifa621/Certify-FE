@@ -68,21 +68,23 @@ export default function BulkSignStatusPage() {
     }
   };
 
-  const copySigningLink = () => {
-    const link = `${window.location.origin}/signing/${eventCode}`;
-    navigator.clipboard.writeText(link);
-    toast.success("Signing link copied to clipboard!");
-  };
-
   if (loading) {
     return (
       <div className="templates-page">
-        <header className="templates-header">
-          <div className="header-content">
-            <h1>Bulk Sign Status</h1>
+        <header style={{
+          borderBottom: '1px solid #e5e7eb',
+          backgroundColor: '#fff',
+          padding: '20px 0'
+        }}>
+          <div style={{
+            maxWidth: '80%',
+            margin: '0 auto',
+            textAlign: 'center'
+          }}>
+            <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>Bulk Sign Status</h1>
           </div>
         </header>
-        <main className="templates-main" style={{ padding: '40px 20px' }}>
+        <main style={{ maxWidth: '80%', margin: '40px auto', padding: '0 40px' }}>
           <p style={{ textAlign: 'center', color: '#6b7280' }}>Loading...</p>
         </main>
       </div>
@@ -92,12 +94,20 @@ export default function BulkSignStatusPage() {
   if (!bulkSign) {
     return (
       <div className="templates-page">
-        <header className="templates-header">
-          <div className="header-content">
-            <h1>Bulk Sign Status</h1>
+        <header style={{
+          borderBottom: '1px solid #e5e7eb',
+          backgroundColor: '#fff',
+          padding: '20px 0'
+        }}>
+          <div style={{
+            maxWidth: '80%',
+            margin: '0 auto',
+            textAlign: 'center'
+          }}>
+            <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>Bulk Sign Status</h1>
           </div>
         </header>
-        <main className="templates-main" style={{ padding: '40px 20px' }}>
+        <main style={{ maxWidth: '80%', margin: '40px auto', padding: '0 40px' }}>
           <p style={{ textAlign: 'center', color: '#6b7280' }}>Event not found</p>
         </main>
       </div>
@@ -109,152 +119,91 @@ export default function BulkSignStatusPage() {
   const isCompleted = status === 'completed' || progress.percentage === 100;
 
   return (
-    <div className="templates-page">
-      <header className="templates-header">
-        <div className="header-content">
+    <div className="templates-page" style={{ backgroundColor: '#f9fafb', minHeight: '100vh' }}>
+      {/* Header: Back button (left) + Title (center) */}
+      <header style={{
+        borderBottom: '1px solid #e5e7eb',
+        backgroundColor: '#fff',
+        padding: '20px 0'
+      }}>
+        <div style={{
+          maxWidth: '80%',
+          margin: '0 auto',
+          padding: '0 40px',
+          display: 'flex',
+          alignItems: 'center',
+          position: 'relative'
+        }}>
           <button onClick={handleBack} className="btn-pill btn-light">
             ← Back to Batch
           </button>
-          <h1>Bulk Sign Status</h1>
+          <h1 style={{
+            position: 'absolute',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            margin: 0,
+            fontSize: '1.5rem',
+            fontWeight: 700,
+            color: '#111827'
+          }}>
+            Bulk Sign Status
+          </h1>
         </div>
       </header>
 
-      <main className="templates-main" style={{ padding: '40px 20px' }}>
-        {/* Signing Details Card */}
-        <section className="template-detail-section" style={{ marginBottom: '20px' }}>
-          <div className="section-header">
-            <h2>Signing Details</h2>
-          </div>
+      {/* Main Content - 80% width, centered */}
+      <main style={{ 
+        maxWidth: '80%', 
+        margin: '0 auto',
+        padding: '40px'
+      }}>
+        {/* 1. Event Details Card - FIRST */}
+        <section style={{
+          backgroundColor: '#fff',
+          borderRadius: '12px',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+          padding: '32px',
+          marginBottom: '24px'
+        }}>
+          <h2 style={{ 
+            fontSize: '1.25rem', 
+            fontWeight: 700,
+            marginBottom: '24px',
+            color: '#111827'
+          }}>
+            Event Details
+          </h2>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
-            {/* Signing Link */}
-            <div>
-              <p style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '8px', fontWeight: 600 }}>
-                Signing Link (Share with Faculty)
-              </p>
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center',
-                gap: '10px',
-                padding: '10px 12px',
-                backgroundColor: '#f9fafb',
-                border: '1px solid #e5e7eb',
-                borderRadius: '6px'
-              }}>
-                <code style={{ 
-                  flex: 1,
-                  fontSize: '0.9rem',
-                  fontFamily: 'monospace',
-                  color: '#374151',
-                  wordBreak: 'break-all'
-                }}>
-                  {window.location.origin}/signing/{eventCode}
-                </code>
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(`${window.location.origin}/signing/${eventCode}`);
-                    toast.success('Signing link copied!');
-                  }}
-                  style={{
-                    padding: '6px 10px',
-                    backgroundColor: 'transparent',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '1rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    color: '#6b7280'
-                  }}
-                  title="Copy signing link"
-                >
-                  📋
-                </button>
-              </div>
-            </div>
-
-            {/* Password */}
-            <div>
-              <p style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '8px', fontWeight: 600 }}>
-                Password (Share with Faculty)
-              </p>
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center',
-                gap: '10px',
-                padding: '10px 12px',
-                backgroundColor: '#f9fafb',
-                border: '1px solid #e5e7eb',
-                borderRadius: '6px'
-              }}>
-                <code style={{ 
-                  flex: 1,
-                  fontSize: '0.9rem',
-                  fontFamily: 'monospace',
-                  color: '#374151'
-                }}>
-                  {bulkSign.password}
-                </code>
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(bulkSign.password);
-                    toast.success('Password copied!');
-                  }}
-                  style={{
-                    padding: '6px 10px',
-                    backgroundColor: 'transparent',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '1rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    color: '#6b7280'
-                  }}
-                  title="Copy password"
-                >
-                  📋
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Event Info Card */}
-        <section className="template-detail-section">
-          <div className="section-header">
-            <h2>Event Details</h2>
-          </div>
-
+          {/* Event Info Grid */}
           <div style={{ 
             display: 'grid', 
             gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: '20px',
-            marginBottom: '20px'
+            gap: '24px',
+            marginBottom: '32px'
           }}>
             <div>
-              <p style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '4px' }}>
+              <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '8px', fontWeight: 500 }}>
                 Event Name
               </p>
-              <p style={{ fontWeight: 600, fontSize: '1rem' }}>
+              <p style={{ fontWeight: 600, fontSize: '1.1rem', color: '#111827' }}>
                 {bulkSign.eventName}
               </p>
             </div>
 
             <div>
-              <p style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '4px' }}>
+              <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '8px', fontWeight: 500 }}>
                 Batch
               </p>
-              <p style={{ fontWeight: 600, fontSize: '1rem' }}>
+              <p style={{ fontWeight: 600, fontSize: '1.1rem', color: '#111827' }}>
                 {batch.name}
               </p>
             </div>
 
             <div>
-              <p style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '4px' }}>
+              <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '8px', fontWeight: 500 }}>
                 Status
               </p>
-              <p style={{ fontWeight: 600, fontSize: '1rem' }}>
+              <p style={{ fontWeight: 600, fontSize: '1.1rem' }}>
                 {isExpired ? (
                   <span style={{ color: '#dc2626' }}>Expired</span>
                 ) : isCompleted ? (
@@ -266,67 +215,39 @@ export default function BulkSignStatusPage() {
             </div>
 
             <div>
-              <p style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '4px' }}>
+              <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '8px', fontWeight: 500 }}>
                 Expires On
               </p>
-              <p style={{ fontWeight: 600, fontSize: '1rem' }}>
+              <p style={{ fontWeight: 600, fontSize: '1.1rem', color: '#111827' }}>
                 {new Date(expiresAt).toLocaleDateString()}
               </p>
             </div>
           </div>
 
-          {/* Signing Link */}
-          <div style={{ 
-            padding: '16px', 
-            backgroundColor: '#f9fafb', 
-            borderRadius: '8px',
-            border: '1px solid #e5e7eb',
-            marginBottom: '20px'
-          }}>
-            <p style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '8px' }}>
-              Signing Link
-            </p>
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-              <code style={{ 
-                flex: 1,
-                padding: '8px 12px', 
-                backgroundColor: '#fff',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '0.9rem',
-                fontFamily: 'monospace'
-              }}>
-                {window.location.origin}/signing/{eventCode}
-              </code>
-              <button
-                type="button"
-                className="btn-pill btn-primary"
-                onClick={copySigningLink}
-              >
-                Copy Link
-              </button>
-            </div>
-          </div>
-
           {/* Progress Bar */}
-          <div>
+          <div style={{
+            padding: '24px',
+            backgroundColor: '#f9fafb',
+            borderRadius: '8px',
+            border: '1px solid #e5e7eb'
+          }}>
             <div style={{ 
               display: 'flex', 
               justifyContent: 'space-between',
-              marginBottom: '8px'
+              marginBottom: '12px'
             }}>
-              <p style={{ fontSize: '0.9rem', fontWeight: 600 }}>
+              <p style={{ fontSize: '1rem', fontWeight: 600, color: '#111827' }}>
                 Signing Progress
               </p>
-              <p style={{ fontSize: '0.9rem', fontWeight: 600, color: '#3b82f6' }}>
+              <p style={{ fontSize: '1rem', fontWeight: 600, color: '#3b82f6' }}>
                 {progress.signed}/{progress.total} ({progress.percentage}%)
               </p>
             </div>
             <div style={{
               width: '100%',
-              height: '24px',
+              height: '32px',
               backgroundColor: '#e5e7eb',
-              borderRadius: '12px',
+              borderRadius: '16px',
               overflow: 'hidden'
             }}>
               <div
@@ -339,105 +260,302 @@ export default function BulkSignStatusPage() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   color: '#fff',
-                  fontSize: '0.75rem',
+                  fontSize: '0.875rem',
                   fontWeight: 600
                 }}
               >
-                {progress.percentage > 10 && `${progress.percentage}%`}
+                {progress.percentage > 15 && `${progress.percentage}%`}
+              </div>
+            </div>
+            {polling && (
+              <p style={{ 
+                fontSize: '0.875rem', 
+                color: '#6b7280', 
+                marginTop: '12px',
+                fontStyle: 'italic',
+                textAlign: 'center'
+              }}>
+                🔄 Auto-refreshing every 3 seconds...
+              </p>
+            )}
+          </div>
+        </section>
+
+        {/* 2. Signing Details Card - SECOND */}
+        <section style={{
+          backgroundColor: '#fff',
+          borderRadius: '12px',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+          padding: '32px',
+          marginBottom: '24px'
+        }}>
+          <h2 style={{ 
+            fontSize: '1.25rem', 
+            fontWeight: 700,
+            marginBottom: '24px',
+            color: '#111827'
+          }}>
+            Signing Details
+          </h2>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px' }}>
+            {/* Signing Link - NO DUPLICATE */}
+            <div>
+              <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '12px', fontWeight: 600 }}>
+                Signing Link (Share with Faculty)
+              </p>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center',
+                gap: '12px',
+                padding: '16px',
+                backgroundColor: '#f9fafb',
+                border: '1px solid #e5e7eb',
+                borderRadius: '8px'
+              }}>
+                <code style={{ 
+                  flex: 1,
+                  fontSize: '0.95rem',
+                  fontFamily: 'monospace',
+                  color: '#374151',
+                  wordBreak: 'break-all'
+                }}>
+                  {window.location.origin}/signing/{eventCode}
+                </code>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/signing/${eventCode}`);
+                    toast.success('Signing link copied!');
+                  }}
+                  className="btn-pill btn-primary"
+                  style={{ padding: '10px 20px', flexShrink: 0 }}
+                >
+                  📋 Copy
+                </button>
+              </div>
+            </div>
+
+            {/* Password */}
+            <div>
+              <p style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '12px', fontWeight: 600 }}>
+                Password (Share with Faculty)
+              </p>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center',
+                gap: '12px',
+                padding: '16px',
+                backgroundColor: '#f9fafb',
+                border: '1px solid #e5e7eb',
+                borderRadius: '8px'
+              }}>
+                <code style={{ 
+                  flex: 1,
+                  fontSize: '1rem',
+                  fontFamily: 'monospace',
+                  color: '#111827',
+                  fontWeight: 700
+                }}>
+                  {bulkSign.password}
+                </code>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(bulkSign.password);
+                    toast.success('Password copied!');
+                  }}
+                  className="btn-pill btn-primary"
+                  style={{ padding: '10px 20px', flexShrink: 0 }}
+                >
+                  📋 Copy
+                </button>
               </div>
             </div>
           </div>
-
-          {polling && (
-            <p style={{ 
-              fontSize: '0.8rem', 
-              color: '#6b7280', 
-              marginTop: '12px',
-              fontStyle: 'italic'
-            }}>
-              🔄 Auto-refreshing every 3 seconds...
-            </p>
-          )}
         </section>
 
-        {/* Certificates Table */}
-        <section className="template-detail-section">
-          <div className="section-header">
-            <h2>Certificates ({certificates.length})</h2>
-          </div>
+        {/* 3. Certificates Table - Centered */}
+        <section style={{
+          backgroundColor: '#fff',
+          borderRadius: '12px',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+          padding: '32px'
+        }}>
+          <h2 style={{ 
+            fontSize: '1.25rem', 
+            fontWeight: 700,
+            marginBottom: '24px',
+            color: '#111827'
+          }}>
+            Certificates ({certificates.length})
+          </h2>
 
-          <div className="batch-table-container">
-            <table className="batch-table">
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ 
+              width: '100%',
+              borderCollapse: 'collapse',
+              backgroundColor: '#fff'
+            }}>
               <thead>
-                <tr>
-                  <th>Email</th>
-                  <th>Original Certificate</th>
-                  <th>Signed Certificate</th>
-                  <th>Status</th>
+                <tr style={{ backgroundColor: '#f9fafb' }}>
+                  <th style={{ 
+                    padding: '16px', 
+                    textAlign: 'left', 
+                    fontSize: '0.875rem', 
+                    fontWeight: 600, 
+                    color: '#6b7280',
+                    borderBottom: '2px solid #e5e7eb'
+                  }}>
+                    Email
+                  </th>
+                  <th style={{ 
+                    padding: '16px', 
+                    textAlign: 'center', 
+                    fontSize: '0.875rem', 
+                    fontWeight: 600, 
+                    color: '#6b7280',
+                    borderBottom: '2px solid #e5e7eb'
+                  }}>
+                    Original Certificate
+                  </th>
+                  <th style={{ 
+                    padding: '16px', 
+                    textAlign: 'center', 
+                    fontSize: '0.875rem', 
+                    fontWeight: 600, 
+                    color: '#6b7280',
+                    borderBottom: '2px solid #e5e7eb'
+                  }}>
+                    Signed Certificate
+                  </th>
+                  <th style={{ 
+                    padding: '16px', 
+                    textAlign: 'center', 
+                    fontSize: '0.875rem', 
+                    fontWeight: 600, 
+                    color: '#6b7280',
+                    borderBottom: '2px solid #e5e7eb'
+                  }}>
+                    Status
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {certificates.map((cert) => {
+                {certificates.map((cert, index) => {
                   const originalUrl = resolveFileUrl(cert.originalFilePath);
                   const signedUrl = cert.signedFilePath 
                     ? resolveFileUrl(cert.signedFilePath)
                     : null;
 
                   return (
-                    <tr key={cert.certificateId}>
-                      <td>{cert.email}</td>
-                      <td>
+                    <tr 
+                      key={cert.certificateId} 
+                      style={{ 
+                        borderBottom: '1px solid #e5e7eb',
+                        backgroundColor: index % 2 === 0 ? '#fff' : '#fafafa'
+                      }}
+                    >
+                      <td style={{ 
+                        padding: '20px 16px', 
+                        fontSize: '0.95rem', 
+                        color: '#111827',
+                        fontWeight: 500
+                      }}>
+                        {cert.email}
+                      </td>
+                      <td style={{ padding: '20px 16px', textAlign: 'center' }}>
                         {originalUrl ? (
                           <a
                             href={originalUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="batch-cert-thumb-link"
+                            style={{ display: 'inline-block' }}
                           >
                             <img
                               src={originalUrl}
                               alt={cert.email}
-                              className="batch-cert-thumb"
+                              style={{ 
+                                maxWidth: '140px',
+                                maxHeight: '100px',
+                                objectFit: 'contain',
+                                border: '2px solid #e5e7eb',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                transition: 'border-color 0.2s, transform 0.2s'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.target.style.borderColor = '#3b82f6';
+                                e.target.style.transform = 'scale(1.05)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.target.style.borderColor = '#e5e7eb';
+                                e.target.style.transform = 'scale(1)';
+                              }}
                             />
                           </a>
                         ) : (
-                          <span className="small-note">No file</span>
+                          <span style={{ fontSize: '0.875rem', color: '#9ca3af' }}>No file</span>
                         )}
                       </td>
-                      <td>
+                      <td style={{ padding: '20px 16px', textAlign: 'center' }}>
                         {signedUrl ? (
                           <a
                             href={signedUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="batch-cert-thumb-link"
+                            style={{ display: 'inline-block' }}
                           >
                             <img
                               src={signedUrl}
                               alt={cert.email}
-                              className="batch-cert-thumb"
+                              style={{ 
+                                maxWidth: '140px',
+                                maxHeight: '100px',
+                                objectFit: 'contain',
+                                border: '2px solid #e5e7eb',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                transition: 'border-color 0.2s, transform 0.2s'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.target.style.borderColor = '#16a34a';
+                                e.target.style.transform = 'scale(1.05)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.target.style.borderColor = '#e5e7eb';
+                                e.target.style.transform = 'scale(1)';
+                              }}
                             />
                           </a>
                         ) : (
-                          <span className="small-note" style={{ color: '#9ca3af' }}>
+                          <span style={{ fontSize: '0.875rem', color: '#9ca3af', fontStyle: 'italic' }}>
                             Not signed yet
                           </span>
                         )}
                       </td>
-                      <td>
+                      <td style={{ padding: '20px 16px', textAlign: 'center' }}>
                         {cert.signatureStatus === 'signed' ? (
                           <span style={{ 
+                            padding: '8px 18px',
+                            backgroundColor: '#dcfce7',
                             color: '#16a34a', 
-                            fontWeight: 600,
-                            fontSize: '0.9rem'
+                            fontWeight: 700,
+                            fontSize: '0.875rem',
+                            borderRadius: '20px',
+                            display: 'inline-block',
+                            letterSpacing: '0.5px'
                           }}>
                             SIGNED
                           </span>
                         ) : (
                           <span style={{ 
+                            padding: '8px 18px',
+                            backgroundColor: '#fef3c7',
                             color: '#f59e0b', 
-                            fontWeight: 600,
-                            fontSize: '0.9rem'
+                            fontWeight: 700,
+                            fontSize: '0.875rem',
+                            borderRadius: '20px',
+                            display: 'inline-block',
+                            letterSpacing: '0.5px'
                           }}>
                             UNSIGNED
                           </span>
@@ -452,7 +570,15 @@ export default function BulkSignStatusPage() {
         </section>
       </main>
 
-      <footer className="templates-footer">
+      {/* Footer */}
+      <footer style={{ 
+        marginTop: '60px', 
+        padding: '32px', 
+        textAlign: 'center', 
+        color: '#6b7280', 
+        fontSize: '0.875rem',
+        borderTop: '1px solid #e5e7eb'
+      }}>
         <span>© 2025 Masai School. All Rights Reserved.</span>
       </footer>
     </div>
