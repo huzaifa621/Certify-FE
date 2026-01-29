@@ -1,9 +1,10 @@
 // src/pages/BatchDetailPage.jsx
 import { useEffect, useState, useRef } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import client from "../api/client";
 import { API_BASE_URL } from "../config";
+import BulkSignModal from "../components/BulkSignModal";
 
 function resolveFileUrl(path) {
   if (!path) return "";
@@ -34,6 +35,11 @@ export default function BatchDetailPage() {
     idLink: false,
     imageLink: false,
   });
+
+  // Bulk Sign Modal state
+  const [showBulkSignModal, setShowBulkSignModal] = useState(false);
+  const [currentBulkSignEvent, setCurrentBulkSignEvent] = useState(null);
+  const [allBulkSignEvents, setAllBulkSignEvents] = useState([]);
 
   // Table container ref for horizontal scroll detection
   const tableContainerRef = useRef(null);
@@ -69,6 +75,24 @@ export default function BatchDetailPage() {
 
     fetchBatch();
   }, [id, navigate]);
+
+  // ---------- Load all bulk sign events ----------
+  useEffect(() => {
+    async function fetchBulkSignEvents() {
+      if (!batch) return;
+      
+      const batchId = batch.batchCode || batch._id;
+      
+      try {
+        const res = await client.get(`/batches/${batchId}/bulk-sign-events`);
+        setAllBulkSignEvents(res.data.events || []);
+      } catch (err) {
+        console.error("Failed to load bulk sign events", err);
+      }
+    }
+
+    fetchBulkSignEvents();
+  }, [batch]);
 
   // ---------- Load template meta (name + image + fields) ----------
   useEffect(() => {
@@ -164,7 +188,8 @@ export default function BatchDetailPage() {
   }
 
   function getCertUrl(cert) {
-    const path = cert.filePath || cert.url || cert.path;
+    // Use currentFilePath (latest version) if available, fallback to legacy filePath
+    const path = cert.currentFilePath || cert.filePath || cert.url || cert.path;
     return resolveFileUrl(path);
   }
 
@@ -405,6 +430,75 @@ export default function BatchDetailPage() {
     }
   }
 
+  // ---------- Bulk Sign Handlers ----------
+
+  function handleOpenBulkSignModal() {
+    setShowBulkSignModal(true);
+  }
+
+  function handleCloseBulkSignModal() {
+    setShowBulkSignModal(false);
+  }
+
+  async function handleCreateBulkSignEvent(data) {
+    const batchId = batch.batchCode || batch._id;
+
+    try {
+      toast.loading("Creating bulk sign event...", { id: "bulk-sign-create" });
+
+      const res = await client.post(`/batches/${batchId}/bulk-sign`, data);
+      
+      const eventCode = res.data.eventCode;
+      const signingUrl = `${window.location.origin}/signing/${eventCode}`;
+
+      toast.success("Bulk sign event created!", { id: "bulk-sign-create" });
+
+      // Show success message with link
+      toast.success(
+        <div>
+          <p style={{ fontWeight: 600, marginBottom: '8px' }}>Signing link created!</p>
+          <p style={{ fontSize: '0.85rem', marginBottom: '8px' }}>
+            Share this link with faculty:
+          </p>
+          <code style={{ 
+            display: 'block',
+            padding: '6px 8px',
+            backgroundColor: '#f3f4f6',
+            borderRadius: '4px',
+            fontSize: '0.8rem',
+            wordBreak: 'break-all',
+            marginBottom: '8px'
+          }}>
+            {signingUrl}
+          </code>
+          <p style={{ fontSize: '0.85rem' }}>
+            Password: <strong>{data.password}</strong>
+          </p>
+        </div>,
+        { duration: 8000 }
+      );
+
+      // Store current event
+      setCurrentBulkSignEvent(res.data);
+
+      // Refresh batch to get updated data
+      const batchRes = await client.get(`/batches/${batchId}`);
+      setBatch(batchRes.data);
+
+      // Refresh bulk sign events list
+      const eventsRes = await client.get(`/batches/${batchId}/bulk-sign-events`);
+      setAllBulkSignEvents(eventsRes.data.events || []);
+
+    } catch (err) {
+      console.error("Create bulk sign error:", err);
+      toast.error(
+        err.response?.data?.message || "Failed to create bulk sign event",
+        { id: "bulk-sign-create" }
+      );
+      throw err; // Re-throw to prevent modal from closing
+    }
+  }
+
   if (loading) {
     return (
       <div className="batch-page">
@@ -572,6 +666,70 @@ export default function BatchDetailPage() {
               {savingConfig ? 'Saving...' : 'Save Configuration'}
             </button>
           </div>
+
+          {/* Bulk Sign Section */}
+          <div className="batch-verification-config" style={{ marginTop: '24px' }}>
+            <h3 className="config-title">Bulk Sign</h3>
+            <p className="config-hint">
+              Create a password-protected signing link for faculty members to sign all certificates at once.
+            </p>
+
+            <button
+              type="button"
+              className="btn-pill btn-primary"
+              onClick={handleOpenBulkSignModal}
+              style={{ marginTop: '16px', width: '100%' }}
+            >
+              Create Signing Link
+            </button>
+
+            {allBulkSignEvents.length > 0 && (
+              <div style={{ marginTop: '16px' }}>
+                <p style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '8px' }}>
+                  Signing Events:
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {allBulkSignEvents.map((event) => (
+                    <Link
+                      key={event.eventCode}
+                      to={`/bulk-sign-status/${event.eventCode}`}
+                      style={{
+                        display: 'block',
+                        padding: '8px 0',
+                        color: event.expired ? '#9ca3af' : '#3b82f6',
+                        textDecoration: 'none',
+                        fontSize: '0.9rem',
+                        transition: 'color 0.2s',
+                        cursor: event.expired ? 'default' : 'pointer'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!event.expired) {
+                          e.target.style.color = '#2563eb';
+                          e.target.style.textDecoration = 'underline';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.color = event.expired ? '#9ca3af' : '#3b82f6';
+                        e.target.style.textDecoration = 'none';
+                      }}
+                    >
+                      {event.eventName}
+                      {event.expired && (
+                        <span style={{ 
+                          marginLeft: '8px', 
+                          fontSize: '0.75rem',
+                          color: '#6b7280',
+                          fontWeight: 600
+                        }}>
+                          (Expired)
+                        </span>
+                      )}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </section>
 
         {/* RIGHT: Certificates table */}
@@ -585,7 +743,7 @@ export default function BatchDetailPage() {
               </p>
             </div>
             {certificates.length > 0 && (
-              <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
                 <button
                   type="button"
                   className="btn-pill btn-primary"
@@ -813,6 +971,16 @@ export default function BatchDetailPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Bulk Sign Modal */}
+      {showBulkSignModal && templateMeta && (
+        <BulkSignModal
+          isOpen={showBulkSignModal}
+          onClose={handleCloseBulkSignModal}
+          templateImage={templateMeta.imagePath}
+          onSubmit={handleCreateBulkSignEvent}
+        />
       )}
     </div>
   );

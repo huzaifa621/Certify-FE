@@ -6,6 +6,8 @@ import TemplateEditorPage from "./pages/TemplateEditorPage.jsx";
 import TemplateDetailPage from "./pages/TemplateDetailPage.jsx";
 import BatchDetailPage from "./pages/BatchDetailPage.jsx";
 import VerifyCertificatePage from "./pages/VerifyCertificatePage";
+import BulkSignStatusPage from "./pages/BulkSignStatusPage.jsx";
+import BulkSigningPage from "./pages/BulkSigningPage.jsx";
 
 export default function App() {
   return (
@@ -16,6 +18,8 @@ export default function App() {
       <Route path="/templatedetail/:id" element={<TemplateDetailPage />} />
       <Route path="/batch/:id" element={<BatchDetailPage />} />
       <Route path="/verify/:certId" element={<VerifyCertificatePage />} />
+      <Route path="/bulk-sign-status/:eventCode" element={<BulkSignStatusPage />} />
+      <Route path="/signing/:eventCode" element={<BulkSigningPage />} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
