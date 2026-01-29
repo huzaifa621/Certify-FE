@@ -25,7 +25,7 @@ export default function SignatureModal({
   
   // Upload signature state
   const [uploadedFile, setUploadedFile] = useState(null);
-  const [threshold, setThreshold] = useState(200); // Default threshold
+  const [threshold, setThreshold] = useState(160); // Default threshold (lowered from 200 to 160)
   
   const canvasRef = useRef(null);
   const previewRef = useRef(null);
@@ -43,6 +43,7 @@ export default function SignatureModal({
   const startDrawing = (e) => {
     setIsDrawing(true);
     const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
     const rect = canvas.getBoundingClientRect();
     
     // Calculate scale factors (canvas resolution vs display size)
@@ -56,7 +57,14 @@ export default function SignatureModal({
     const x = (clientX - rect.left) * scaleX;
     const y = (clientY - rect.top) * scaleY;
     
+    // Draw a small dot immediately (for single clicks)
+    // This ensures dots appear even without mouse movement
+    ctx.beginPath();
+    ctx.arc(x, y, ctx.lineWidth / 2, 0, Math.PI * 2);
+    ctx.fill();
+    
     setLastPos({ x, y });
+    setHasSignature(true);
   };
 
   const draw = (e) => {
@@ -101,7 +109,7 @@ export default function SignatureModal({
       setSignatureCanvas(null);
       setPreviewCanvas(null);
       setUploadedFile(null); // Reset uploaded file
-      setThreshold(200); // Reset threshold to default
+      setThreshold(160); // Reset threshold to default (160)
     }
   };
 
@@ -239,6 +247,23 @@ export default function SignatureModal({
       >
         <h2 className="modal-title">Add Your Signature</h2>
 
+        {/* Important Warning Message */}
+        <div style={{
+          marginBottom: '20px',
+          padding: '14px',
+          backgroundColor: '#fef3c7',
+          border: '2px solid #fbbf24',
+          borderRadius: '8px',
+          fontSize: '0.85rem',
+          color: '#92400e',
+          lineHeight: '1.4'
+        }}>
+          <strong style={{ display: 'block', marginBottom: '4px', color: '#78350f' }}>
+            Important:
+          </strong>
+          All certificate processing happens on your device. Please keep this window open and maintain internet connectivity throughout the process.
+        </div>
+
         {/* Tabs */}
         <div style={{ 
           display: 'flex', 
@@ -373,7 +398,7 @@ export default function SignatureModal({
                   <input
                     type="range"
                     min="150"
-                    max="250"
+                    max="200"
                     value={threshold}
                     onChange={handleThresholdChange}
                     style={{

@@ -411,8 +411,8 @@ export default function BulkSigningPage() {
 
         {/* Main Content Grid */}
         <div style={{ 
-          display: 'grid',
-          gridTemplateColumns: 'minmax(300px, 400px) 1fr',
+          display: 'flex',
+          flexDirection: window.innerWidth <= 768 ? 'column' : 'row',
           gap: '20px',
           alignItems: 'start'
         }}>
@@ -422,8 +422,10 @@ export default function BulkSigningPage() {
             borderRadius: '8px',
             boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
             padding: '20px',
-            maxHeight: '70vh',
-            overflow: 'auto'
+            maxHeight: window.innerWidth > 768 ? '70vh' : 'auto',
+            overflow: 'auto',
+            width: window.innerWidth > 768 ? '350px' : '100%',
+            flexShrink: 0
           }}>
             <h3 style={{ 
               fontSize: '1.1rem', 
@@ -495,7 +497,9 @@ export default function BulkSigningPage() {
             backgroundColor: '#fff',
             borderRadius: '8px',
             boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-            padding: '20px'
+            padding: '20px',
+            flex: 1,
+            minWidth: 0
           }}>
             <div style={{ 
               display: 'flex', 
@@ -516,9 +520,26 @@ export default function BulkSigningPage() {
                 {allSigned 
                   ? '✓ All Certificates Signed'
                   : isProcessing
-                    ? '⏳ Processing...'
-                    : '🖊️ Click Here to Bulk Sign'}
+                    ? 'Processing...'
+                    : 'Click Here to Bulk Sign'}
               </button>
+            </div>
+
+            {/* Important Warning Message */}
+            <div style={{
+              marginBottom: '20px',
+              padding: '16px',
+              backgroundColor: '#fef3c7',
+              border: '2px solid #fbbf24',
+              borderRadius: '8px',
+              fontSize: '0.9rem',
+              color: '#92400e',
+              lineHeight: '1.5'
+            }}>
+              <strong style={{ display: 'block', marginBottom: '4px', color: '#78350f' }}>
+                Important:
+              </strong>
+              All certificate processing happens on your device. Please keep this window open and maintain internet connectivity throughout the process.
             </div>
 
             <div style={{ 
@@ -577,18 +598,6 @@ export default function BulkSigningPage() {
                   Certificate preview will appear here
                 </div>
               )}
-            </div>
-
-            <div style={{
-              marginTop: '20px',
-              padding: '16px',
-              backgroundColor: '#eff6ff',
-              borderRadius: '8px',
-              fontSize: '0.85rem',
-              color: '#1e40af'
-            }}>
-              <strong>Important:</strong> All certificate processing happens on your device. 
-              Please keep this window open and maintain internet connectivity throughout the process.
             </div>
           </div>
         </div>

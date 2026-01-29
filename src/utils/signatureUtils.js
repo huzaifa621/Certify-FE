@@ -5,9 +5,9 @@
  * Works with white/gray/colored backgrounds
  * Converts all ink colors (blue, black, red, etc.) to pure black
  * @param {ImageData} imageData - The image data to process
- * @param {number} threshold - Brightness threshold (0-255), default 200
+ * @param {number} threshold - Brightness threshold (0-255), default 160
  */
-export function removeWhiteBackground(imageData, threshold = 200) {
+export function removeWhiteBackground(imageData, threshold = 160) {
   const data = imageData.data;
   
   for (let i = 0; i < data.length; i += 4) {
@@ -40,9 +40,9 @@ export function removeWhiteBackground(imageData, threshold = 200) {
  * Process uploaded signature image
  * Removes background and returns canvas
  * @param {File} file - The image file to process
- * @param {number} threshold - Brightness threshold (0-255), default 200
+ * @param {number} threshold - Brightness threshold (0-255), default 160
  */
-export async function processSignatureImage(file, threshold = 200) {
+export async function processSignatureImage(file, threshold = 160) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     
@@ -234,7 +234,8 @@ export function initializeSignatureCanvas(canvas) {
   // Set up canvas for smooth pen-like drawing
   ctx.lineCap = 'round';        // Rounded line ends
   ctx.lineJoin = 'round';       // Smooth corners
-  ctx.strokeStyle = '#000000';  // Black ink
+  ctx.strokeStyle = '#000000';  // Black ink for lines
+  ctx.fillStyle = '#000000';    // Black ink for dots
   ctx.lineWidth = 3;            // Pen thickness (3px)
   
   // Enable anti-aliasing for smooth lines
