@@ -340,7 +340,7 @@ export default function BatchDetailPage() {
         
         // Image Link
         if (csvOptions.imageLink) {
-          row.push(escapeCSVField(cert.filePath || ""));
+          row.push(escapeCSVField(cert.currentFilePath || cert.filePath || ""));
         }
         
         csvLines.push(row.join(","));
