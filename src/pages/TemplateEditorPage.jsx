@@ -128,6 +128,7 @@ export default function TemplateEditorPage() {
               fontWeight: "600",
               fontFamily: "Arial",
               textAlign: "center",
+              lineHeight: 1.2,
             },
           ];
         }
@@ -237,6 +238,7 @@ export default function TemplateEditorPage() {
       fontWeight: "500",
       fontFamily: "Arial",
       textAlign: "center",
+      lineHeight: 1.2,
     };
 
     const updated = [...fields, newField];
@@ -287,6 +289,7 @@ export default function TemplateEditorPage() {
             label,
             key: label,
             fontSize: Number(editFieldDraft.fontSize) || 20,
+            lineHeight: Number(editFieldDraft.lineHeight) || 1.2,
             x: clamp01(editFieldDraft.x),
             y: clamp01(editFieldDraft.y),
             width: clamp01(editFieldDraft.width),
@@ -494,6 +497,7 @@ export default function TemplateEditorPage() {
         fontWeight: f.fontWeight,
         fontFamily: f.fontFamily,
         textAlign: f.textAlign,
+        lineHeight: f.lineHeight ?? 1.2,
       }));
 
       const payloadQr =
@@ -663,20 +667,14 @@ export default function TemplateEditorPage() {
                   fontWeight: field.fontWeight,
                   fontFamily: field.fontFamily,
                   textAlign: field.textAlign,
+                  lineHeight: field.lineHeight || 1.2,
                   width: "100%",
                   height: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent:
-                    field.textAlign === "center"
-                      ? "center"
-                      : field.textAlign === "right"
-                      ? "flex-end"
-                      : "flex-start",
-                  padding: "2px 4px", // ✓ Match backend and preview mode
+                  padding: "2px 4px",
                   overflow: "hidden",
-                  whiteSpace: "nowrap",
-                  textOverflow: "ellipsis",
+                  whiteSpace: "normal",
+                  wordBreak: "break-word",
+                  boxSizing: "border-box",
                 };
 
                 return (
@@ -753,18 +751,12 @@ export default function TemplateEditorPage() {
                   fontWeight: field.fontWeight,
                   fontFamily: field.fontFamily,
                   textAlign: field.textAlign,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent:
-                    field.textAlign === "center"
-                      ? "center"
-                      : field.textAlign === "right"
-                      ? "flex-end"
-                      : "flex-start",
+                  lineHeight: field.lineHeight || 1.2,
                   padding: "2px 4px",
                   overflow: "hidden",
-                  whiteSpace: "nowrap",
-                  textOverflow: "ellipsis",
+                  whiteSpace: "normal",
+                  wordBreak: "break-word",
+                  boxSizing: "border-box",
                   pointerEvents: "none",
                 };
 
@@ -1488,6 +1480,21 @@ export default function TemplateEditorPage() {
                   value={editFieldDraft.fontSize}
                   onChange={(e) =>
                     handleEditDraftChange("fontSize", e.target.value)
+                  }
+                />
+              </label>
+
+              <label className="modal-label">
+                Line Height
+                <input
+                  type="number"
+                  step="0.1"
+                  min="1"
+                  max="3"
+                  className="modal-input"
+                  value={editFieldDraft.lineHeight ?? 1.2}
+                  onChange={(e) =>
+                    handleEditDraftChange("lineHeight", e.target.value)
                   }
                 />
               </label>

@@ -165,6 +165,14 @@
   background-color: #f9fafb;
 }
 
+/* Truncate long cell text with ellipsis; title attribute shows full text on hover */
+.cell-truncate {
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Certificate thumbnail */
 .batch-cert-thumb-link {
   display: inline-block;

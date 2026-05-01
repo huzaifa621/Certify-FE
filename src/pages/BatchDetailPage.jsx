@@ -790,10 +790,18 @@ export default function BatchDetailPage() {
                     return (
                       <tr key={cert._id || index}>
                         <td>{index + 1}</td>
-                        <td>{cert.email}</td>
+                        <td>
+                          <div className="cell-truncate" title={cert.email}>
+                            {cert.email}
+                          </div>
+                        </td>
 
                         {dynamicFieldLabels.map((label) => (
-                          <td key={label}>{data[label] ?? ""}</td>
+                          <td key={label}>
+                            <div className="cell-truncate" title={data[label] ?? ""}>
+                              {data[label] ?? ""}
+                            </div>
+                          </td>
                         ))}
 
                         <td>
